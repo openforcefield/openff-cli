@@ -7,6 +7,8 @@ OpenFF CLI
 
 Command line utilities for the Open Force Field software stack
 
+**Please note that this software in an early and experimental state and unsuitable for production.**
+
 ### Copyright
 
 Copyright (c) 2020, Open Force Field Initiative
