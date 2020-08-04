@@ -1,5 +1,6 @@
 name: test
 channels:
+  - conda-forge
 dependencies:
     # Base depends
   - python
@@ -9,8 +10,3 @@ dependencies:
   - pytest
   - pytest-cov
   - codecov
-
-    # Pip-only installs
-  #- pip:
-  #  - codecov
-
