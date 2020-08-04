@@ -17,7 +17,7 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath('..'))
 
-import openff_cli
+from openff import cli
 
 
 # -- Project information -----------------------------------------------------
