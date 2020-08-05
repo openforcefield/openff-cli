@@ -1,8 +1,11 @@
 import sys
 
-from openff import cli
+from openff.cli import check_versions
 
 
-def test_openff_cli_imported():
-    """Sample test, will always pass so long as import statement worked"""
-    assert "openff.cli" in sys.modules
+class TestCheckVersions:
+    def test_basic_output(self):
+        out = check_versions.get_versions()
+
+        assert "OpenFF Toolkit" in out
+        assert "OpenFF CLI" in out
