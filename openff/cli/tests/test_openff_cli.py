@@ -1,5 +1,7 @@
 import sys
 
+from openff import cli
+
 
 def test_openff_cli_imported():
     """Sample test, will always pass so long as import statement worked"""
