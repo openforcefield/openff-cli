@@ -1,11 +1,14 @@
 name: test
 channels:
   - conda-forge
+  - omnia
 dependencies:
     # Base depends
   - python
   - pip
 
+    # Core depends
+  - openforcefield
     # Testing
   - pytest
   - pytest-cov
