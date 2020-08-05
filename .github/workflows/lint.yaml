@@ -2,9 +2,7 @@ name: lint
 
 on:
   push:
-    paths:
-      - 'openff/**.py'
-      - 'setup.cfg'
+  pull_request:
 
 jobs:
 
