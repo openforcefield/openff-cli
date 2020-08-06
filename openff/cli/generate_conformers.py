@@ -144,7 +144,7 @@ def _build_simulation(molecule, forcefield, mols_with_charge):
     """Given a Molecule and ForceField, initialize a barebones OpenMM Simulation."""
     mol_copy = deepcopy(molecule)
     off_top = molecule.to_topology()
-    system, top_with_charges = forcefield.create_openmm_system(
+    system, ret_top = forcefield.create_openmm_system(
         off_top,
         charge_from_molecules=mols_with_charge,
         allow_nonintegral_charges=True,
@@ -157,16 +157,19 @@ def _build_simulation(molecule, forcefield, mols_with_charge):
     omm_top = off_top.to_openmm()
     simulation = openmm.app.Simulation(omm_top, system, integrator, platform)
 
-    # TODO: return_topology does not produce a top with charges, either make it do so
-    # or reconstruct partial charges from OpenMM system
-    # partial_charges = [*top_with_charges.reference_molecules][0].partial_charges
-    partial_charges = [system.getForces()[0].getParticleParameters(i)[0] for i in range(mol_copy.n_atoms)]
-    # Unwrap list of Quantity objects into a single Quantity that contains a list
-    # Surely there's a simpler way to to this?
-    partial_charges = unit.Quantity(
-        np.asarray([val.value_in_unit(unit.elementary_charge) for val in partial_charges]),
-        unit=unit.elementary_charge,
-    )
+    charges_from_top = [*ret_top.reference_molecules][0].partial_charges
+    if charges_from_top is not None:
+        partial_charges = charges_from_top
+    else:
+        # ret_top only has partial charges in OFFTK 0.8.0+, so may need to
+        # manually get partial charges from OpenMM if using OFFTK <= 0.7.1
+        partial_charges = [system.getForces()[0].getParticleParameters(i)[0] for i in range(mol_copy.n_atoms)]
+        # Unwrap list of Quantity objects into a single Quantity that contains a list
+        # Surely there's a simpler way to to this?
+        partial_charges = unit.Quantity(
+            np.asarray([val.value_in_unit(unit.elementary_charge) for val in partial_charges]),
+            unit=unit.elementary_charge,
+        )
 
     return simulation, partial_charges
 

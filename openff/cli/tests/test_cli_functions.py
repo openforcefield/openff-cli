@@ -2,9 +2,10 @@ import pytest
 import numpy as np
 
 from openforcefield.topology import Molecule
-from openff.cli.generate_conformers import generate_conformers
-from openforcefield.tests.utils import get_data_file_path
 from openforcefield.utils import RDKIT_AVAILABLE, OPENEYE_AVAILABLE
+
+from openff.cli.generate_conformers import generate_conformers
+from openff.cli.utils import get_data_file_path
 
 
 # TODO: Update skipifs after #615
