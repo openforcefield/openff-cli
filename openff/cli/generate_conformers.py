@@ -1,31 +1,36 @@
 import argparse
 from copy import deepcopy
 
-from openforcefield.typing.engines.smirnoff import ForceField
-from openforcefield.topology.molecule import UndefinedStereochemistryError
-from openforcefield.utils.toolkits import ToolkitRegistry
-
 # from rdkit.Chem import rdMolAlign
 import numpy as np
+from openforcefield.topology.molecule import UndefinedStereochemistryError
+from openforcefield.typing.engines.smirnoff import ForceField
+from openforcefield.utils.toolkits import ToolkitRegistry
 from simtk import openmm, unit
 
 
 def generate_conformers(
-    molecule, toolkit, forcefield, rms_cutoff=None, constrained=False, prefix=None, return_registry=False,
+    molecule,
+    toolkit,
+    forcefield,
+    rms_cutoff=None,
+    constrained=False,
+    prefix=None,
+    return_registry=False,
 ):
     if toolkit.lower() == "openeye":
-        from openforcefield.utils.toolkits import OpenEyeToolkitWrapper
         import openeye
+        from openforcefield.utils.toolkits import OpenEyeToolkitWrapper
 
         toolkit_registry = ToolkitRegistry(toolkit_precedence=[OpenEyeToolkitWrapper])
-        toolkit_version = 'openeye-toolkits version ' + openeye.__version__
+        toolkit_version = "openeye-toolkits version " + openeye.__version__
 
     elif toolkit.lower() == "rdkit":
-        from openforcefield.utils.toolkits import RDKitToolkitWrapper
         import rdkit
+        from openforcefield.utils.toolkits import RDKitToolkitWrapper
 
         toolkit_registry = ToolkitRegistry(toolkit_precedence=[RDKitToolkitWrapper])
-        toolkit_version = 'rdkit version ' + rdkit.__version__
+        toolkit_version = "rdkit version " + rdkit.__version__
 
     ff_name = forcefield
     if constrained:
@@ -45,7 +50,10 @@ def generate_conformers(
     except UndefinedStereochemistryError:
         ambiguous_stereochemistry = True
         raw_mols = toolkit_registry.call(
-            "from_file", molecule, file_format=molecule.split(".")[-1], allow_undefined_stereo=True,
+            "from_file",
+            molecule,
+            file_format=molecule.split(".")[-1],
+            allow_undefined_stereo=True,
         )
 
     if type(raw_mols) != list:
@@ -56,7 +64,7 @@ def generate_conformers(
         if prefix is not None:
             mol.name = prefix + str(i)
         elif not mol.name:
-            mol.name = 'molecule' + str(i)
+            mol.name = "molecule" + str(i)
         mols.append(mol)
 
     # TODO: How to handle names of different stereoisomers? Just act like they're different conformers?
@@ -68,7 +76,7 @@ def generate_conformers(
             stereoisomers = mol.enumerate_stereoisomers()
             if stereoisomers:
                 for i, iso in enumerate(stereoisomers):
-                    iso.name = mol.name + '_stereoisomer' + str(i)
+                    iso.name = mol.name + "_stereoisomer" + str(i)
                     mols_with_unpacked_stereoisomers.append(iso)
             else:
                 mols_with_unpacked_stereoisomers.append(mol)
@@ -100,7 +108,7 @@ def generate_conformers(
             energy, positions = _get_minimized_data(conformer, simulation)
             mol = _reconstruct_mol_from_conformer(mol, positions)
             _add_metadata_to_mol(mol, energy, toolkit_version, ff_name)
-            mol.name += '_conf' + str(i)
+            mol.name += "_conf" + str(i)
             mols_out.append(mol)
 
     if return_registry:
@@ -148,12 +156,12 @@ def _build_simulation(molecule, forcefield, mols_with_charge):
         off_top,
         charge_from_molecules=mols_with_charge,
         allow_nonintegral_charges=True,
-        return_topology=True
+        return_topology=True,
     )
 
     # Use OpenMM to compute initial and minimized energy for all conformers
     integrator = openmm.VerletIntegrator(1 * unit.femtoseconds)
-    platform = openmm.Platform.getPlatformByName('Reference')
+    platform = openmm.Platform.getPlatformByName("Reference")
     omm_top = off_top.to_openmm()
     simulation = openmm.app.Simulation(omm_top, system, integrator, platform)
 
@@ -163,11 +171,16 @@ def _build_simulation(molecule, forcefield, mols_with_charge):
     else:
         # ret_top only has partial charges in OFFTK 0.8.0+, so may need to
         # manually get partial charges from OpenMM if using OFFTK <= 0.7.1
-        partial_charges = [system.getForces()[0].getParticleParameters(i)[0] for i in range(mol_copy.n_atoms)]
+        partial_charges = [
+            system.getForces()[0].getParticleParameters(i)[0]
+            for i in range(mol_copy.n_atoms)
+        ]
         # Unwrap list of Quantity objects into a single Quantity that contains a list
         # Surely there's a simpler way to to this?
         partial_charges = unit.Quantity(
-            np.asarray([val.value_in_unit(unit.elementary_charge) for val in partial_charges]),
+            np.asarray(
+                [val.value_in_unit(unit.elementary_charge) for val in partial_charges]
+            ),
             unit=unit.elementary_charge,
         )
 
@@ -189,25 +202,29 @@ def _get_minimized_data(conformer, simulation):
 def _reconstruct_mol_from_conformer(mol, positions):
     mol = deepcopy(mol)
     mol._conformers = None
-    min_coords = np.array([[atom.x, atom.y, atom.z] for atom in positions]) * unit.nanometer
+    min_coords = (
+        np.array([[atom.x, atom.y, atom.z] for atom in positions]) * unit.nanometer
+    )
     mol.add_conformer(min_coords)
     return mol
 
 
 def _add_metadata_to_mol(mol, energy, toolkit_version, ff_name):
-    mol.properties['absolute energy (kcal/mol): '] = energy
-    mol.properties['conformer generation toolkit: '] = toolkit_version
-    mol.properties['minimized against: '] = ff_name
+    mol.properties["absolute energy (kcal/mol): "] = energy
+    mol.properties["conformer generation toolkit: "] = toolkit_version
+    mol.properties["minimized against: "] = ff_name
 
 
 def write_mols(mols, toolkit_registry):
     """Save minimized structures, with data in SD tags, to files"""
     for i, mol in enumerate(mols):
         if mol.name:
-            filename = mol.name + '.sdf'
+            filename = mol.name + ".sdf"
         else:
-            mol.name = f'molecule{i}.sdf'
-        mol.to_file(file_path=filename, file_format='SDF', toolkit_registry=toolkit_registry)
+            mol.name = f"molecule{i}.sdf"
+        mol.to_file(
+            file_path=filename, file_format="SDF", toolkit_registry=toolkit_registry
+        )
 
 
 if __name__ == "__main__":
@@ -215,7 +232,10 @@ if __name__ == "__main__":
         description="Generate conformers with cheminformatics toolkits"
     )
     parser.add_argument(
-        "-t", "--toolkit", type=str, help="Name of the underlying cheminformatics toolkit to use",
+        "-t",
+        "--toolkit",
+        type=str,
+        help="Name of the underlying cheminformatics toolkit to use",
     )
     parser.add_argument(
         "-f", "--forcefield", type=str, help="Name of the force field to use",

@@ -13,6 +13,6 @@ def get_data_file_path(rel_path):
         Name of the file to find the full path of
     """
 
-    full_path = pkg_resources.resource_filename('openff.cli', 'data/' + rel_path)
+    full_path = pkg_resources.resource_filename("openff.cli", "data/" + rel_path)
 
     return full_path
