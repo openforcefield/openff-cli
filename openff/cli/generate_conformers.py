@@ -1,36 +1,22 @@
 import argparse
 from copy import deepcopy
+from typing import List, Optional, Tuple
 
 # from rdkit.Chem import rdMolAlign
 import numpy as np
-from openforcefield.topology.molecule import UndefinedStereochemistryError
+from openforcefield.topology.molecule import Molecule, UndefinedStereochemistryError
 from openforcefield.typing.engines.smirnoff import ForceField
 from openforcefield.utils.toolkits import ToolkitRegistry
 from simtk import openmm, unit
 
 
 def generate_conformers(
-    molecule,
-    toolkit,
-    forcefield,
-    rms_cutoff=None,
-    constrained=False,
-    prefix=None,
-    return_registry=False,
-):
-    if toolkit.lower() == "openeye":
-        import openeye
-        from openforcefield.utils.toolkits import OpenEyeToolkitWrapper
-
-        toolkit_registry = ToolkitRegistry(toolkit_precedence=[OpenEyeToolkitWrapper])
-        toolkit_version = "openeye-toolkits version " + openeye.__version__
-
-    elif toolkit.lower() == "rdkit":
-        import rdkit
-        from openforcefield.utils.toolkits import RDKitToolkitWrapper
-
-        toolkit_registry = ToolkitRegistry(toolkit_precedence=[RDKitToolkitWrapper])
-        toolkit_version = "rdkit version " + rdkit.__version__
+    molecule: str,
+    registry: ToolkitRegistry,
+    forcefield: str,
+    constrained: bool = False,
+    prefix: Optional[bool] = None,
+) -> List[Molecule]:
 
     ff_name = forcefield
     if constrained:
@@ -44,12 +30,12 @@ def generate_conformers(
     # TODO: This may not preserve order of loading molecules in
     ambiguous_stereochemistry = False
     try:
-        raw_mols = toolkit_registry.call(
+        raw_mols = registry.call(
             "from_file", molecule, file_format=molecule.split(".")[-1],
         )
     except UndefinedStereochemistryError:
         ambiguous_stereochemistry = True
-        raw_mols = toolkit_registry.call(
+        raw_mols = registry.call(
             "from_file",
             molecule,
             file_format=molecule.split(".")[-1],
@@ -87,7 +73,7 @@ def generate_conformers(
     # TODO: If 1 or a few conformers are found, should more be generated?
     for mol in mols:
         if mol.conformers is None:
-            mol.generate_conformers(toolkit_registry=toolkit_registry, n_conformers=1)
+            mol.generate_conformers(toolkit_registry=registry, n_conformers=1)
 
     # TODO: What happens if some molecules in a multi-molecule file have charges, others don't?
     mols_with_charges = []
@@ -107,14 +93,11 @@ def generate_conformers(
         for i, conformer in enumerate(mol.conformers):
             energy, positions = _get_minimized_data(conformer, simulation)
             mol = _reconstruct_mol_from_conformer(mol, positions)
-            _add_metadata_to_mol(mol, energy, toolkit_version, ff_name)
+            _add_metadata_to_mol(mol, energy, registry.toolkit_version, ff_name)
             mol.name += "_conf" + str(i)
             mols_out.append(mol)
 
-    if return_registry:
-        return mols_out, toolkit_registry
-    else:
-        return mols_out
+    return mols_out
 
 
 def _collapse_conformers(molecules):
@@ -187,7 +170,9 @@ def _build_simulation(molecule, forcefield, mols_with_charge):
     return simulation, partial_charges
 
 
-def _get_minimized_data(conformer, simulation):
+def _get_minimized_data(
+    conformer: unit.Quantity, simulation: openmm.app.Simulation
+) -> Tuple[unit.Quantity]:
     """Given an OpenMM simulation and conformer, minimze and return an energy"""
     simulation.context.setPositions(conformer)
     simulation.minimizeEnergy()
@@ -199,7 +184,9 @@ def _get_minimized_data(conformer, simulation):
     return min_energy, min_coords
 
 
-def _reconstruct_mol_from_conformer(mol, positions):
+def _reconstruct_mol_from_conformer(
+    mol: Molecule, positions: unit.Quantity,
+) -> Molecule:
     mol = deepcopy(mol)
     mol._conformers = None
     min_coords = (
@@ -209,13 +196,36 @@ def _reconstruct_mol_from_conformer(mol, positions):
     return mol
 
 
-def _add_metadata_to_mol(mol, energy, toolkit_version, ff_name):
+def _add_metadata_to_mol(
+    mol: Molecule, energy: unit.Quantity, toolkit_version: str, ff_name: str
+) -> None:
     mol.properties["absolute energy (kcal/mol): "] = energy
     mol.properties["conformer generation toolkit: "] = toolkit_version
     mol.properties["minimized against: "] = ff_name
 
 
-def write_mols(mols, toolkit_registry):
+def make_registry(toolkit: str) -> ToolkitRegistry:
+    if toolkit.lower() == "openeye":
+        import openeye
+        from openforcefield.utils.toolkits import OpenEyeToolkitWrapper
+
+        toolkit_registry = ToolkitRegistry(toolkit_precedence=[OpenEyeToolkitWrapper])
+        toolkit_version = "openeye-toolkits version " + openeye.__version__
+
+    elif toolkit.lower() == "rdkit":
+        import rdkit
+        from openforcefield.utils.toolkits import RDKitToolkitWrapper
+
+        toolkit_registry = ToolkitRegistry(toolkit_precedence=[RDKitToolkitWrapper])
+        toolkit_version = "rdkit version " + rdkit.__version__
+
+    if not hasattr(toolkit_registry, "toolkit_version"):
+        toolkit_registry.toolkit_version = toolkit_version
+
+    return toolkit_registry
+
+
+def write_mols(mols: List[Molecule], toolkit_registry: ToolkitRegistry) -> None:
     """Save minimized structures, with data in SD tags, to files"""
     for i, mol in enumerate(mols):
         if mol.name:
@@ -268,14 +278,14 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    mols, toolkit_registry = generate_conformers(
+    registry = make_registry(args.toolkit)
+
+    mols = generate_conformers(
         molecule=args.molecule,
-        toolkit=args.toolkit,
+        registry=registry,
         forcefield=args.forcefield,
-        rms_cutoff=args.rms_cutoff,
         constrained=args.constrained,
         prefix=args.prefix,
-        return_registry=True,
     )
 
-    write_mols(mols, toolkit_registry=toolkit_registry)
+    write_mols(mols, toolkit_registry=registry)
