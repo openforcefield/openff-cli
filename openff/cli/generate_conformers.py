@@ -48,9 +48,11 @@ def generate_conformers(
     mols = []
     for i, mol in enumerate(raw_mols):
         if prefix is not None:
-            mol.name = prefix + str(i)
+            mol.name = prefix
         elif not mol.name:
-            mol.name = "molecule" + str(i)
+            mol.name = "molecule"
+        if len(raw_mols) > 1:
+            mol.name += str(i)
         mols.append(mol)
 
     # TODO: How to handle names of different stereoisomers? Just act like they're different conformers?
@@ -227,14 +229,21 @@ def make_registry(toolkit: str) -> ToolkitRegistry:
 
 def write_mols(mols: List[Molecule], toolkit_registry: ToolkitRegistry) -> None:
     """Save minimized structures, with data in SD tags, to files"""
-    for i, mol in enumerate(mols):
-        if mol.name:
-            filename = mol.name + ".sdf"
-        else:
-            mol.name = f"molecule{i}.sdf"
-        mol.to_file(
-            file_path=filename, file_format="SDF", toolkit_registry=toolkit_registry
+    if len(mols) == 1:
+        mols[0].to_file(
+            file_path=mols[0].name + ".sdf",
+            file_format="SDF",
+            toolkit_registry=toolkit_registry,
         )
+    else:
+        for i, mol in enumerate(mols):
+            if mol.name:
+                filename = mol.name + ".sdf"
+            else:
+                mol.name = f"molecule{i}.sdf"
+            mol.to_file(
+                file_path=filename, file_format="SDF", toolkit_registry=toolkit_registry
+            )
 
 
 if __name__ == "__main__":

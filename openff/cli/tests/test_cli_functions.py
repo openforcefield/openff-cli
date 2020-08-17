@@ -1,3 +1,5 @@
+import pathlib
+
 import numpy as np
 import pytest
 from openforcefield.topology import Molecule
@@ -8,8 +10,14 @@ from openforcefield.utils import (
     RDKitToolkitWrapper,
 )
 
-from openff.cli.generate_conformers import generate_conformers, make_registry
+from openff.cli.generate_conformers import (
+    generate_conformers,
+    make_registry,
+    write_mols,
+)
 from openff.cli.utils import get_data_file_path
+
+# TODO: Run all tests in a safe temporary directory
 
 
 # TODO: Update skipifs after #615
@@ -64,7 +72,7 @@ class TestGenerateConformersCLI:
 
     # TODO: Figure out how to skip a test based on a variable passed in through parametrize
     @pytest.mark.skipif(True, reason="Test requires OpenEye toolkit")
-    def test_load_one_mol_mol2_with_charge(self, toolkit):
+    def test_load_one_mol_mol2_without_charge(self, toolkit):
         """Test loading one molecule from a .mol2 file WITH charges"""
         registry = make_registry(toolkit)
         toluene_partial_charges = get_data_file_path("molecules/toluene_charged.mol2")
@@ -79,11 +87,58 @@ class TestGenerateConformersCLI:
         assert len(mols_out) == 1
         assert np.allclose(mols_out[0].partial_charges, charges_in)
 
-    # (OE only) loading one molecule from a .mol2 file WITHOUT charges (is this even possible)
+    @pytest.mark.skipif(True, reason="Test requires OpenEye toolkit")
+    def test_load_one_mol_mol2_with_charge(self, toolkit):
+        """
+        Test loading one molecule from a .mol2 file WITHOUT charges
+
+        .. note :: This file was generated via the one-liner below and has nan
+            charges, which may or may not be valid.
+
+        ```
+        Molecule.from_smiles('CCO').to_file(
+            'ethanol_no_charges.mol2',
+            file_format='mol2',
+        )
+        ```
+        """
+        registry = make_registry(toolkit)
+        ethanol_partial_charges = get_data_file_path(
+            "molecules/ethanol_no_charges.mol2"
+        )
+        charges_in = Molecule.from_file(ethanol_partial_charges).partial_charges
+
+        mols_out = generate_conformers(
+            molecule=ethanol_partial_charges,
+            forcefield="openff-1.0.0.offxml",
+            registry=registry,
+        )
+
+        assert len(mols_out) == 1
+
+        assert not charges_in
+        assert not mols_out[0].partial_charges
 
     # loading a molecule with a defined name (from any format) and ensuring the output file has that prefix
     # loading a molecule with a defined name (from any format), and providing a -f option and
-    # ensuring the output file has the -f prefix
+
+    def test_p_prefix(self, toolkit):
+        """Ensure the output file has the -p prefix"""
+        registry = make_registry(toolkit)
+
+        ethanol = get_data_file_path("molecules/ethanol.sdf")
+
+        mols_out = generate_conformers(
+            molecule=ethanol,
+            forcefield="openff-1.0.0.offxml",
+            registry=registry,
+            prefix="test_ethanol",
+        )
+
+        write_mols(mols=mols_out, toolkit_registry=registry)
+
+        assert pathlib.Path("test_ethanol_conf0.sdf").is_file()
+
     # loading a molecule with a defined name (from any format) and ensuring the output file has that prefix
     # loading multiple molecules from a .sdf file
 
