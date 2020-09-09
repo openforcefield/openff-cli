@@ -46,7 +46,9 @@ class TestGenerateConformersCLI:
         assert Molecule.from_file(ethanol).partial_charges is None
 
         mols_out = generate_conformers(
-            molecule=ethanol, forcefield="openff-1.0.0.offxml", registry=registry,
+            molecule=ethanol,
+            forcefield="openff-1.0.0.offxml",
+            registry=registry,
         )
 
         assert len(mols_out) == 1
@@ -120,7 +122,8 @@ class TestGenerateConformersCLI:
         assert not mols_out[0].partial_charges
 
     # loading a molecule with a defined name (from any format) and ensuring the output file has that prefix
-    # loading a molecule with a defined name (from any format), and providing a -f option and
+    # loading a molecule with a defined name (from any format), and providing
+    # a -f option and ensuring the output file has the -f prefix
 
     def test_p_prefix(self, toolkit):
         """Ensure the output file has the -p prefix"""
@@ -135,19 +138,25 @@ class TestGenerateConformersCLI:
             prefix="test_ethanol",
         )
 
-        write_mols(mols=mols_out, toolkit_registry=registry)
+        write_mols(
+            mols=mols_out,
+            toolkit_registry=registry,
+            molecule=ethanol,
+            prefix="test_ethanol",
+        )
 
         assert pathlib.Path("test_ethanol_conf0.sdf").is_file()
 
     # loading a molecule with a defined name (from any format) and ensuring the output file has that prefix
-    # loading multiple molecules from a .sdf file
 
     def test_load_multi_mol_sdf(self, toolkit):
         """Test the case of an SDF file with multiple molecules"""
         registry = make_registry(toolkit)
         butane_multi = get_data_file_path("molecules/butane_multi.sdf")
         generate_conformers(
-            molecule=butane_multi, forcefield="openff-1.0.0.offxml", registry=registry,
+            molecule=butane_multi,
+            forcefield="openff-1.0.0.offxml",
+            registry=registry,
         )
 
     def test_load_one_mol_smi(self, toolkit):
@@ -155,7 +164,9 @@ class TestGenerateConformersCLI:
         registry = make_registry(toolkit)
         ebastine = get_data_file_path("molecules/ebastine.smi")
         mols_out = generate_conformers(
-            molecule=ebastine, forcefield="openff-1.0.0.offxml", registry=registry,
+            molecule=ebastine,
+            forcefield="openff-1.0.0.offxml",
+            registry=registry,
         )
 
         assert len(mols_out) == 1
@@ -165,7 +176,9 @@ class TestGenerateConformersCLI:
         registry = make_registry(toolkit)
         dyes = get_data_file_path("molecules/multi_mols.smi")
         mols_out = generate_conformers(
-            molecule=dyes, forcefield="openff-1.0.0.offxml", registry=registry,
+            molecule=dyes,
+            forcefield="openff-1.0.0.offxml",
+            registry=registry,
         )
 
         assert len(mols_out) == 3
@@ -176,7 +189,9 @@ class TestGenerateConformersCLI:
         registry = make_registry(toolkit)
         mol = get_data_file_path("molecules/dichloroethene_ambiguous_stereo.smi")
         mols_out = generate_conformers(
-            molecule=mol, forcefield="openff-1.0.0.offxml", registry=registry,
+            molecule=mol,
+            forcefield="openff-1.0.0.offxml",
+            registry=registry,
         )
 
         assert len(mols_out) == 2
@@ -186,7 +201,9 @@ class TestGenerateConformersCLI:
         registry = make_registry(toolkit)
         mol = get_data_file_path("molecules/dichloroethene_stereo.smi")
         mols_out = generate_conformers(
-            molecule=mol, forcefield="openff-1.0.0.offxml", registry=registry,
+            molecule=mol,
+            forcefield="openff-1.0.0.offxml",
+            registry=registry,
         )
 
         assert Molecule(mol).is_isomorphic_with(mols_out[0])

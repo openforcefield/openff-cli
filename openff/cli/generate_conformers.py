@@ -15,7 +15,7 @@ def generate_conformers(
     registry: ToolkitRegistry,
     forcefield: str,
     constrained: bool = False,
-    prefix: Optional[bool] = None,
+    prefix: Optional[str] = None,
 ) -> List[Molecule]:
 
     ff_name = forcefield
@@ -31,7 +31,9 @@ def generate_conformers(
     ambiguous_stereochemistry = False
     try:
         raw_mols = registry.call(
-            "from_file", molecule, file_format=molecule.split(".")[-1],
+            "from_file",
+            molecule,
+            file_format=molecule.split(".")[-1],
         )
     except UndefinedStereochemistryError:
         ambiguous_stereochemistry = True
@@ -187,7 +189,8 @@ def _get_minimized_data(
 
 
 def _reconstruct_mol_from_conformer(
-    mol: Molecule, positions: unit.Quantity,
+    mol: Molecule,
+    positions: unit.Quantity,
 ) -> Molecule:
     mol = deepcopy(mol)
     mol._conformers = None
@@ -227,20 +230,28 @@ def make_registry(toolkit: str) -> ToolkitRegistry:
     return toolkit_registry
 
 
-def write_mols(mols: List[Molecule], toolkit_registry: ToolkitRegistry) -> None:
+def write_mols(
+    mols: List[Molecule],
+    toolkit_registry: ToolkitRegistry,
+    molecule: str,
+    prefix: Optional[str],
+) -> None:
     """Save minimized structures, with data in SD tags, to files"""
+    if prefix is not None:
+        prefix_out = prefix
+    else:
+        prefix_from_filename = ".".join(molecule.split(".")[:-1])
+        prefix_out = prefix_from_filename
+
     if len(mols) == 1:
         mols[0].to_file(
-            file_path=mols[0].name + ".sdf",
+            file_path=prefix_out + ".sdf",
             file_format="SDF",
             toolkit_registry=toolkit_registry,
         )
     else:
         for i, mol in enumerate(mols):
-            if mol.name:
-                filename = mol.name + ".sdf"
-            else:
-                mol.name = f"molecule{i}.sdf"
+            filename = prefix_out + str(i) + ".sdf"
             mol.to_file(
                 file_path=filename, file_format="SDF", toolkit_registry=toolkit_registry
             )
@@ -257,7 +268,10 @@ if __name__ == "__main__":
         help="Name of the underlying cheminformatics toolkit to use",
     )
     parser.add_argument(
-        "-f", "--forcefield", type=str, help="Name of the force field to use",
+        "-f",
+        "--forcefield",
+        type=str,
+        help="Name of the force field to use",
     )
     parser.add_argument(
         "-m",
@@ -297,4 +311,6 @@ if __name__ == "__main__":
         prefix=args.prefix,
     )
 
-    write_mols(mols, toolkit_registry=registry)
+    write_mols(
+        mols, toolkit_registry=registry, molecule=args.molecule, prefix=args.prefix
+    )
