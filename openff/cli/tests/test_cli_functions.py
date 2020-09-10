@@ -207,3 +207,27 @@ class TestGenerateConformersCLI:
         )
 
         assert Molecule(mol).is_isomorphic_with(mols_out[0])
+
+
+def test_parsing_error():
+    """Ensure the """
+    from openff.cli.exceptions import MoleculeParsingError
+
+    # Ensure the exception can be raised with no keyword arguments
+    exec_msg = "Failed to parse a molecule file."
+    with pytest.raises(MoleculeParsingError, match=exec_msg):
+        raise MoleculeParsingError
+
+    # Try to parse a MOL2 file with RDKit
+    registry = make_registry("rdkit")
+    mol = get_data_file_path("molecules/ethanol_no_charges.mol2")
+    exec_msg = (
+        "Failed to parse a molecule file. Attempted to parse file "
+        ".*ethanol_no_charges.mol2 using toolkit registry containing+.*RDKit"
+    )
+    with pytest.raises(MoleculeParsingError, match=exec_msg):
+        generate_conformers(
+            molecule=mol,
+            forcefield="openff-1.0.0.offxml",
+            registry=registry,
+        )

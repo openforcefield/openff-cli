@@ -27,25 +27,32 @@ def generate_conformers(
         ff_name += ".offxml"
     ff = ForceField(ff_name)
 
+    file_format = molecule.split(".")[-1]
+
     # TODO: This may not preserve order of loading molecules in
     ambiguous_stereochemistry = False
     try:
         raw_mols = registry.call(
             "from_file",
             molecule,
-            file_format=molecule.split(".")[-1],
+            file_format=file_format,
         )
     except UndefinedStereochemistryError:
         ambiguous_stereochemistry = True
         raw_mols = registry.call(
             "from_file",
             molecule,
-            file_format=molecule.split(".")[-1],
+            file_format=file_format,
             allow_undefined_stereo=True,
         )
 
-    if type(raw_mols) != list:
-        raw_mols = [raw_mols]
+    # When failing to parse molecules (i.e. attempting to read MOL2 with
+    # RDKit, which is not supported) the toolkit can return an empty
+    # list instead of raising a specific exception
+    if raw_mols == []:
+        from openff.cli.exceptions import MoleculeParsingError
+
+        raise MoleculeParsingError(toolkit_registry=registry, filename=molecule)
 
     mols = []
     for i, mol in enumerate(raw_mols):
