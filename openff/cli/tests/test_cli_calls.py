@@ -14,11 +14,11 @@ class TestCLICalls:
 
     def test_check_versions(self):
         """Test some basic behavior of check_versions.py"""
-        import openforcefield
+        from openforcefield import __version__ as toolkit_version
 
-        import openff.cli
+        from openff.cli import __version__ as cli_version
 
         out, _ = self.call("python openff/cli/check_versions.py")
         # TODO: Use regex to connect package names with versions
-        assert openforcefield.__version__ in out
-        assert openff.cli.__version__ in out
+        assert toolkit_version in out
+        assert cli_version in out

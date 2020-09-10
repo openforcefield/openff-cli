@@ -50,7 +50,7 @@ def generate_conformers(
     # RDKit, which is not supported) the toolkit can return an empty
     # list instead of raising a specific exception
     if raw_mols == []:
-        from openff.cli.exceptions import MoleculeParsingError
+        from openff.cli.utils.exceptions import MoleculeParsingError
 
         raise MoleculeParsingError(toolkit_registry=registry, filename=molecule)
 

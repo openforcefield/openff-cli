@@ -10,14 +10,28 @@ from openforcefield.utils import (
     RDKitToolkitWrapper,
 )
 
+from openff.cli.check_versions import get_versions
 from openff.cli.generate_conformers import (
     generate_conformers,
     make_registry,
     write_mols,
 )
-from openff.cli.utils import get_data_file_path
+from openff.cli.tests.utils import get_data_file_path
 
 # TODO: Run all tests in a safe temporary directory
+
+
+class TestCheckVersions:
+    def test_basic_output(self):
+        out = get_versions()
+        from openforcefield import __version__ as toolkit_version
+
+        from openff.cli import __version__ as cli_version
+
+        assert "OpenFF Toolkit" in out
+        assert "OpenFF CLI" in out
+        assert toolkit_version in out
+        assert cli_version in out
 
 
 # TODO: Update skipifs after #615
@@ -211,7 +225,7 @@ class TestGenerateConformersCLI:
 
 def test_parsing_error():
     """Ensure the """
-    from openff.cli.exceptions import MoleculeParsingError
+    from openff.cli.utils.exceptions import MoleculeParsingError
 
     # Ensure the exception can be raised with no keyword arguments
     exec_msg = "Failed to parse a molecule file."
