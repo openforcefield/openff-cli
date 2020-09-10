@@ -223,13 +223,16 @@ def make_registry(toolkit: str) -> ToolkitRegistry:
 
         toolkit_registry = ToolkitRegistry(toolkit_precedence=[OpenEyeToolkitWrapper])
         toolkit_version = "openeye-toolkits version " + openeye.__version__
-
     elif toolkit.lower() == "rdkit":
         import rdkit
         from openforcefield.utils.toolkits import RDKitToolkitWrapper
 
         toolkit_registry = ToolkitRegistry(toolkit_precedence=[RDKitToolkitWrapper])
         toolkit_version = "rdkit version " + rdkit.__version__
+    else:
+        from openff.cli.utils.exceptions import UnsupportedToolkitError
+
+        raise UnsupportedToolkitError(toolkit=toolkit)
 
     if not hasattr(toolkit_registry, "toolkit_version"):
         toolkit_registry.toolkit_version = toolkit_version
@@ -252,13 +255,13 @@ def write_mols(
 
     if len(mols) == 1:
         mols[0].to_file(
-            file_path=prefix_out + ".sdf",
+            file_path=prefix_out + "_0.sdf",
             file_format="SDF",
             toolkit_registry=toolkit_registry,
         )
     else:
         for i, mol in enumerate(mols):
-            filename = prefix_out + str(i) + ".sdf"
+            filename = prefix_out + "_" + str(i) + ".sdf"
             mol.to_file(
                 file_path=filename, file_format="SDF", toolkit_registry=toolkit_registry
             )
@@ -297,7 +300,6 @@ if __name__ == "__main__":
         "-p",
         "--prefix",
         type=str,
-        default="molecule",
         help="The prefix for output molecules",
     )
     parser.add_argument(

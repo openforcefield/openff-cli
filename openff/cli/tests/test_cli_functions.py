@@ -224,7 +224,7 @@ class TestGenerateConformersCLI:
 
 
 def test_parsing_error():
-    """Ensure the """
+    """Ensure that failed molecule parsing is caught"""
     from openff.cli.utils.exceptions import MoleculeParsingError
 
     # Ensure the exception can be raised with no keyword arguments
@@ -236,7 +236,7 @@ def test_parsing_error():
     registry = make_registry("rdkit")
     mol = get_data_file_path("molecules/ethanol_no_charges.mol2")
     exec_msg = (
-        "Failed to parse a molecule file. Attempted to parse file "
+        r"Failed to parse a molecule file. Attempted to parse file "
         ".*ethanol_no_charges.mol2 using toolkit registry containing+.*RDKit"
     )
     with pytest.raises(MoleculeParsingError, match=exec_msg):
@@ -245,3 +245,15 @@ def test_parsing_error():
             forcefield="openff-1.0.0.offxml",
             registry=registry,
         )
+
+
+def test_unsupported_toolkit_error():
+    """Ensure that requesting an unsupported toolkit is caught"""
+    from openff.cli.utils.exceptions import UnsupportedToolkitError
+
+    exec_msg = (
+        r"Requested use of a cheminformatics toolkit not supported by "
+        "the OpenFF Toolkit. .* magic"
+    )
+    with pytest.raises(UnsupportedToolkitError, match=exec_msg):
+        make_registry("magic")

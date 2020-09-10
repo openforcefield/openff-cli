@@ -5,14 +5,15 @@ class MoleculeParsingError(Exception):
         """
         Parameters
         ----------
-        toolkit_registry: ToolkitRegistry
-            The registry which attempted to parse the molecule
-            source.
+        filename : str, optional
+            The name of the file that was requested to be loaded in
+        toolkit_registry : ToolkitRegistry, optional
+            The registry which attempted to parse the molecule source.
         """
         self.message = "Failed to parse a molecule file."
-        if filename is not None:
+        if filename:
             self.message += f" Attempted to parse file {filename}"
-        if toolkit_registry is not None:
+        if toolkit_registry:
             self.message += (
                 " using toolkit registry containing the following toolkits: "
             )
@@ -21,6 +22,28 @@ class MoleculeParsingError(Exception):
                 self.message += str(toolkit_registry.registered_toolkit_versions)
             else:
                 self.message += str(toolkit_registry.registered_toolkits)
+
+    def __str__(self):
+        return self.message
+
+
+class UnsupportedToolkitError(Exception):
+    """An exception raised when requesting use of a cheminformatics toolkit
+    not supported by the OpenFF Toolkit."""
+
+    def __init__(self, toolkit=None):
+        """
+        Parameters
+        ----------
+        toolkit : str, optional
+            The name of the cheminformatics toolkit that was requested
+        """
+        self.message = (
+            "Requested use of a cheminformatics toolkit not supported by "
+            "the OpenFF Toolkit."
+        )
+        if toolkit:
+            self.message += f" Requested the toolkit of name {toolkit}"
 
     def __str__(self):
         return self.message
