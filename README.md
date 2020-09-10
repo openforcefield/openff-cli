@@ -1,8 +1,8 @@
 OpenFF CLI
 ==============================
 [//]: # (Badges)
-[![GitHub Actions Build Status](https://github.com/REPLACE_WITH_OWNER_ACCOUNT/openff_cli/workflows/CI/badge.svg)](https://github.com/REPLACE_WITH_OWNER_ACCOUNT/openff_cli/actions?query=branch%3Amaster+workflow%3ACI)
-[![codecov](https://codecov.io/gh/REPLACE_WITH_OWNER_ACCOUNT/OpenFF CLI/branch/master/graph/badge.svg)](https://codecov.io/gh/REPLACE_WITH_OWNER_ACCOUNT/OpenFF CLI/branch/master)
+[![GitHub Actions Build Status](https://github.com/openforcefield/openff-cli/workflows/ci/badge.svg)](https://github.com/openforcefield/openff-cli/actions?query=branch%3Amaster+workflow%3Aci)
+[![codecov](https://codecov.io/gh/openforcefield/openff-cli/branch/master/graph/badge.svg)](https://codecov.io/gh/openforcefield/openff-cli/branch/master)
 
 
 Command line utilities for the Open Force Field software stack
