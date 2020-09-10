@@ -26,8 +26,10 @@ def get_versions():
             continue
         out += f"{key:20}\t{mod.__version__}\n"
 
-    return out
+    print(out)
 
 
 if __name__ == "__main__":
-    exit(get_versions())
+    # TODO: Have this function return the string, without printing above
+    #  or return an exit code here
+    get_versions()
