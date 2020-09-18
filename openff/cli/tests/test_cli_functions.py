@@ -1,4 +1,5 @@
 import pathlib
+import tempfile
 
 import numpy as np
 import pytest
@@ -9,6 +10,7 @@ from openforcefield.utils import (
     RDKIT_AVAILABLE,
     OpenEyeToolkitWrapper,
     RDKitToolkitWrapper,
+    temporary_cd,
 )
 
 from openff.cli.check_versions import get_versions
@@ -153,14 +155,16 @@ class TestGenerateConformersCLI:
             prefix="test_ethanol",
         )
 
-        write_mols(
-            mols=mols_out,
-            toolkit_registry=registry,
-            molecule=ethanol,
-            prefix="test_ethanol",
-        )
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            with temporary_cd(tmp_dir):
+                write_mols(
+                    mols=mols_out,
+                    toolkit_registry=registry,
+                    molecule=ethanol,
+                    prefix="test_ethanol",
+                )
 
-        assert pathlib.Path("test_ethanol_conf0.sdf").is_file()
+                assert pathlib.Path("test_ethanol_0.sdf").is_file()
 
     # loading a molecule with a defined name (from any format) and ensuring the output file has that prefix
 
@@ -236,6 +240,56 @@ class TestGenerateConformersCLI:
             forcefield=ff_name,
             registry=registry,
         )
+
+    def test_different_forcefields(self, toolkit):
+        """Test that different --forcefield arguments produce different results"""
+        from openff.cli.tests.utils import get_data_file_path
+
+        registry = make_registry(toolkit)
+        mol = get_data_file_path("molecules/ebastine.smi")
+        parsley_1_0_0 = generate_conformers(
+            molecule=mol,
+            forcefield="openff-1.0.0",
+            prefix="parsley100",
+            registry=registry,
+        )
+        parsley_1_2_0 = generate_conformers(
+            molecule=mol,
+            forcefield="openff-1.2.0",
+            prefix="parsley120",
+            registry=registry,
+        )
+
+        assert not np.allclose(
+            parsley_1_0_0[0].conformers[0],
+            parsley_1_2_0[0].conformers[0],
+        )
+
+
+def test_different_toolkits():
+    """Test that different --toolkit argumnents produce different results"""
+    from openff.cli.tests.utils import get_data_file_path
+
+    rdkit = make_registry("rdkit")
+    openeye = make_registry("openeye")
+    mol = get_data_file_path("molecules/ebastine.smi")
+    rdkit_results = generate_conformers(
+        molecule=mol,
+        forcefield="openff-1.0.0",
+        prefix="rdkit",
+        registry=rdkit,
+    )
+    openeye_results = generate_conformers(
+        molecule=mol,
+        forcefield="openff-1.0.0",
+        prefix="openeye",
+        registry=openeye,
+    )
+
+    assert not np.allclose(
+        rdkit_results[0].conformers[0],
+        openeye_results[0].conformers[0],
+    )
 
 
 def test_parsing_error():
