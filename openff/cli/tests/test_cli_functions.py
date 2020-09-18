@@ -3,6 +3,7 @@ import pathlib
 import numpy as np
 import pytest
 from openforcefield.topology import Molecule
+from openforcefield.typing.engines.smirnoff.forcefield import get_available_force_fields
 from openforcefield.utils import (
     OPENEYE_AVAILABLE,
     RDKIT_AVAILABLE,
@@ -221,6 +222,20 @@ class TestGenerateConformersCLI:
         )
 
         assert Molecule(mol).is_isomorphic_with(mols_out[0])
+
+    @pytest.mark.parametrize("ff_name", get_available_force_fields())
+    def test_available_forcefields(self, toolkit, ff_name):
+        """Test that all forcefields available through get_available_forcefields
+        can at least do a basic conformer generaiton"""
+        # TODO: Possibly ensure this produces non-garbage output,
+        #  instead of only "doesn't raise an error we know of"
+        registry = make_registry(toolkit)
+        mol = get_data_file_path("molecules/ethanol.sdf")
+        generate_conformers(
+            molecule=mol,
+            forcefield=ff_name,
+            registry=registry,
+        )
 
 
 def test_parsing_error():

@@ -79,9 +79,6 @@ def generate_conformers(
                 mols_with_unpacked_stereoisomers.append(mol)
         mols = mols_with_unpacked_stereoisomers
 
-    # If no conformers were found (i.e. SMI files), generate some
-    # TODO: How many should be generated?
-    # TODO: If 1 or a few conformers are found, should more be generated?
     for mol in mols:
         if mol.conformers is None:
             mol.generate_conformers(toolkit_registry=registry, n_conformers=1)
