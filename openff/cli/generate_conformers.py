@@ -2,7 +2,6 @@ import argparse
 from copy import deepcopy
 from typing import List, Optional, Tuple
 
-# from rdkit.Chem import rdMolAlign
 import numpy as np
 from openforcefield.topology.molecule import Molecule, UndefinedStereochemistryError
 from openforcefield.typing.engines.smirnoff import ForceField
@@ -80,8 +79,12 @@ def generate_conformers(
         mols = mols_with_unpacked_stereoisomers
 
     for mol in mols:
-        if mol.conformers is None:
-            mol.generate_conformers(toolkit_registry=registry, n_conformers=1)
+        # TODO: Keep some conformers, if found in input molecule?
+        mol.generate_conformers(
+            toolkit_registry=registry,
+            n_conformers=20,
+            rms_cutoff=0.25 * unit.angstrom,
+        )
 
     # TODO: What happens if some molecules in a multi-molecule file have charges, others don't?
     mols_with_charges = []
@@ -102,8 +105,9 @@ def generate_conformers(
             energy, positions = _get_minimized_data(conformer, simulation)
             mol = _reconstruct_mol_from_conformer(mol, positions)
             _add_metadata_to_mol(mol, energy, registry.toolkit_version, ff_name)
-            mol.name += "_conf" + str(i)
             mols_out.append(mol)
+
+    mols_out = _sort_mols(mols_out)
 
     return mols_out
 
@@ -211,6 +215,26 @@ def _add_metadata_to_mol(
     mol.properties["absolute energy (kcal/mol): "] = energy
     mol.properties["conformer generation toolkit: "] = toolkit_version
     mol.properties["minimized against: "] = ff_name
+
+
+def _sort_mols(mols: List[Molecule]) -> List[Molecule]:
+    final_list = []
+    unique_mol_names = set([mol.name for mol in mols])
+
+    # To handle multi-molecule SDF files, group molecules by molecules, and then conformers
+    for mol_name in unique_mol_names:
+        mols_with_energy = [
+            (mol, mol.properties["absolute energy (kcal/mol): "])
+            for mol in mols
+            if mol.name == mol_name
+        ]
+        mols_with_energy.sort(key=lambda x: x[1])
+        # TODO: Here could be some logic for filtering out high-energy conformers
+        sorted_mols = [x[0] for x in mols_with_energy]
+        for i, sorted_mol in enumerate(sorted_mols):
+            sorted_mol.name += "_conf" + str(i)
+            final_list.append(sorted_mol)
+    return final_list
 
 
 def make_registry(toolkit: str) -> ToolkitRegistry:
