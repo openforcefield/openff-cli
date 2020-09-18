@@ -8,7 +8,7 @@ dependencies:
   - pip
 
     # Core depends
-  - openforcefield
+  - openforcefield # > 0.7.1
 
     # Testing
   - pytest
