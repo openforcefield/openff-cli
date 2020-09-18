@@ -266,6 +266,8 @@ class TestGenerateConformersCLI:
         )
 
 
+@pytest.mark.skipif(not RDKIT_AVAILABLE, reason="requires rdkit")
+@pytest.mark.skipif(not OPENEYE_AVAILABLE, reason="requires openeye")
 def test_different_toolkits():
     """Test that different --toolkit argumnents produce different results"""
     from openff.cli.tests.utils import get_data_file_path
