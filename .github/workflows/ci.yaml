@@ -21,13 +21,14 @@ jobs:
         openeye: ["true", "false"]
     env:
       PYVER: ${{ matrix.python-version }}
+      OE_LICENSE: ${{ github.workspace }}/oe_license.txt
 
     steps:
     - uses: actions/checkout@v2
 
     - uses: goanpeca/setup-miniconda@v1
       name: Install both RDKit and OpenEye toolkits
-      if: ${{ matrix.openeye == 'TRUE' }}
+      if: ${{ matrix.openeye == "TRUE" }}
       with:
         python-version: ${{ matrix.python-version }}
         activate-environment: test
@@ -37,7 +38,7 @@ jobs:
 
     - uses: goanpeca/setup-miniconda@v1
       name: Install only RDKit
-      if: ${{ matrix.openeye == 'FALSE' }}
+      if: ${{ matrix.openeye == "FALSE" }}
       with:
         python-version: ${{ matrix.python-version }}
         activate-environment: test
@@ -57,6 +58,14 @@ jobs:
           fi
           python -c "from openforcefield.utils.toolkits import OPENEYE_AVAILABLE; assert not OPENEYE_AVAILABLE, 'OpenEye unexpectedly found'"
         fi
+
+    - name: Make oe_license.txt file from GH org secret "OE_LICENSE"
+      if: ${{ matrix.openeye == "TRUE" }}
+      shell: bash
+      env:
+        OE_LICENSE_TEXT: ${{ secrets.OE_LICENSE }}
+      run: |
+        echo "${OE_LICENSE_TEXT}" > ${OE_LICENSE}
 
     - name: Additional info about the build
       shell: bash
