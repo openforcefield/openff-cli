@@ -80,11 +80,6 @@ jobs:
         conda info --all
         conda list
 
-    - name: Install development version of toolkit
-      shell: bash -l {0}
-      run: |
-        python -m pip install git+https://github.com/openforcefield/openforcefield
-
     - name: Install package
       shell: bash -l {0}
       run: |
