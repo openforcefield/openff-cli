@@ -28,7 +28,7 @@ jobs:
 
     - uses: goanpeca/setup-miniconda@v1
       name: Install both RDKit and OpenEye toolkits
-      if: ${{ matrix.openeye == "TRUE" }}
+      if: ${{ matrix.openeye == 'TRUE' }}
       with:
         python-version: ${{ matrix.python-version }}
         activate-environment: test
@@ -38,7 +38,7 @@ jobs:
 
     - uses: goanpeca/setup-miniconda@v1
       name: Install only RDKit
-      if: ${{ matrix.openeye == "FALSE" }}
+      if: ${{ matrix.openeye == 'FALSE' }}
       with:
         python-version: ${{ matrix.python-version }}
         activate-environment: test
@@ -60,7 +60,7 @@ jobs:
         fi
 
     - name: Make oe_license.txt file from GH org secret "OE_LICENSE"
-      if: ${{ matrix.openeye == "TRUE" }}
+      if: ${{ matrix.openeye == 'TRUE' }}
       shell: bash
       env:
         OE_LICENSE_TEXT: ${{ secrets.OE_LICENSE }}
