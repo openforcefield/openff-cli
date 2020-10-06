@@ -63,6 +63,8 @@ def generate_conformers(
             mol.name += str(i)
         mols.append(mol)
 
+    mols = _collapse_conformers(mols)
+
     # TODO: How to handle names of different stereoisomers? Just act like they're different conformers?
     if ambiguous_stereochemistry:
         mols_with_unpacked_stereoisomers = []
@@ -91,8 +93,6 @@ def generate_conformers(
     for mol in mols:
         if mol.partial_charges is not None:
             mols_with_charges.append(mol)
-
-    mols = _collapse_conformers(mols)
 
     mols_out = []
     for mol in mols:
