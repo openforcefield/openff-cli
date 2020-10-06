@@ -256,16 +256,22 @@ class TestGenerateConformersCLI:
 
 @requires_rdkit
 @requires_openeye
-def test_make_registry(self, toolkit):
+def test_make_registry():
     """Test the behavior of the make_registry helper function. This is
     hard-coded to each toolkit as specific objects needed to be found."""
     rdkit_registry = make_registry("rdkit")
     assert isinstance(rdkit_registry.registered_toolkits[0], RDKitToolkitWrapper)
-    assert OpenEyeToolkitWrapper not in rdkit_registry.registered_toolkits
+    assert not any(
+        isinstance(tkw, OpenEyeToolkitWrapper)
+        for tkw in rdkit_registry.registered_toolkits
+    )
 
     openeye_registry = make_registry("openeye")
     assert isinstance(openeye_registry.registered_toolkits[0], OpenEyeToolkitWrapper)
-    assert RDKitToolkitWrapper not in rdkit_registry.registered_toolkits
+    assert not any(
+        isinstance(tkw, RDKitToolkitWrapper)
+        for tkw in openeye_registry.registered_toolkits
+    )
 
 
 @requires_rdkit
