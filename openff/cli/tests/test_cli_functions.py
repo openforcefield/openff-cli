@@ -36,22 +36,14 @@ class TestCheckVersions:
         assert cli_version in out
 
 
-@requires_openeye
-@requires_rdkit
-@pytest.mark.parametrize("toolkit", ["rdkit", "openeye"])
+@pytest.mark.parametrize(
+    "toolkit",
+    [
+        pytest.param("rdkit", marks=requires_rdkit),
+        pytest.param("openeye", marks=requires_openeye),
+    ],
+)
 class TestGenerateConformersCLI:
-    def test_make_registry(self, toolkit):
-        """Test the behavior of the make_registry helper function"""
-        rdkit_registry = make_registry("rdkit")
-        assert isinstance(rdkit_registry.registered_toolkits[0], RDKitToolkitWrapper)
-        assert OpenEyeToolkitWrapper not in rdkit_registry.registered_toolkits
-
-        openeye_registry = make_registry("openeye")
-        assert isinstance(
-            openeye_registry.registered_toolkits[0], OpenEyeToolkitWrapper
-        )
-        assert RDKitToolkitWrapper not in rdkit_registry.registered_toolkits
-
     def test_load_one_mol_sdf_without_charge(self, toolkit):
         """Test loading one molecule from a .sdf file WITHOUT charges"""
         registry = make_registry(toolkit)
@@ -260,6 +252,20 @@ class TestGenerateConformersCLI:
             parsley_1_0_0[0].conformers[0],
             parsley_1_2_0[0].conformers[0],
         )
+
+
+@requires_rdkit
+@requires_openeye
+def test_make_registry(self, toolkit):
+    """Test the behavior of the make_registry helper function. This is
+    hard-coded to each toolkit as specific objects needed to be found."""
+    rdkit_registry = make_registry("rdkit")
+    assert isinstance(rdkit_registry.registered_toolkits[0], RDKitToolkitWrapper)
+    assert OpenEyeToolkitWrapper not in rdkit_registry.registered_toolkits
+
+    openeye_registry = make_registry("openeye")
+    assert isinstance(openeye_registry.registered_toolkits[0], OpenEyeToolkitWrapper)
+    assert RDKitToolkitWrapper not in rdkit_registry.registered_toolkits
 
 
 @requires_rdkit
