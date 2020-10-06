@@ -145,7 +145,6 @@ def _collapse_conformers(molecules):
 
 def _build_simulation(molecule, forcefield, mols_with_charge):
     """Given a Molecule and ForceField, initialize a barebones OpenMM Simulation."""
-    mol_copy = deepcopy(molecule)
     off_top = molecule.to_topology()
     system, ret_top = forcefield.create_openmm_system(
         off_top,
@@ -168,7 +167,7 @@ def _build_simulation(molecule, forcefield, mols_with_charge):
         # manually get partial charges from OpenMM if using OFFTK <= 0.7.1
         partial_charges = [
             system.getForces()[0].getParticleParameters(i)[0]
-            for i in range(mol_copy.n_atoms)
+            for i in range(molecule.n_atoms)
         ]
         # Unwrap list of Quantity objects into a single Quantity that contains a list
         # Surely there's a simpler way to to this?

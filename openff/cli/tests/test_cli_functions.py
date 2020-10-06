@@ -3,11 +3,10 @@ import tempfile
 
 import numpy as np
 import pytest
+from openforcefield.tests.utils import requires_openeye, requires_rdkit
 from openforcefield.topology import Molecule
 from openforcefield.typing.engines.smirnoff.forcefield import get_available_force_fields
 from openforcefield.utils import (
-    OPENEYE_AVAILABLE,
-    RDKIT_AVAILABLE,
     OpenEyeToolkitWrapper,
     RDKitToolkitWrapper,
     temporary_cd,
@@ -37,13 +36,10 @@ class TestCheckVersions:
         assert cli_version in out
 
 
-# TODO: Update skipifs after #615
-@pytest.mark.skipif(not RDKIT_AVAILABLE, reason="requires rdkit")
-@pytest.mark.skipif(not OPENEYE_AVAILABLE, reason="requires openeye")
+@requires_openeye
+@requires_rdkit
 @pytest.mark.parametrize("toolkit", ["rdkit", "openeye"])
 class TestGenerateConformersCLI:
-    # TODO: Test CLI calls directly
-
     def test_make_registry(self, toolkit):
         """Test the behavior of the make_registry helper function"""
         rdkit_registry = make_registry("rdkit")
@@ -68,7 +64,7 @@ class TestGenerateConformersCLI:
             registry=registry,
         )
 
-        assert len(mols_out) == 1
+        assert len(mols_out) > 1
         assert mols_out[0].partial_charges is not None
 
     def test_load_one_mol_sdf_with_charge(self, toolkit):
@@ -86,7 +82,7 @@ class TestGenerateConformersCLI:
             registry=registry,
         )
 
-        assert len(mols_out) == 1
+        assert len(mols_out) > 1
         assert np.allclose(mols_out[0].partial_charges, charges_in)
 
     # TODO: Figure out how to skip a test based on a variable passed in through parametrize
@@ -103,7 +99,7 @@ class TestGenerateConformersCLI:
             registry=registry,
         )
 
-        assert len(mols_out) == 1
+        assert len(mols_out) > 1
         assert np.allclose(mols_out[0].partial_charges, charges_in)
 
     @pytest.mark.skipif(True, reason="Test requires OpenEye toolkit")
@@ -188,7 +184,7 @@ class TestGenerateConformersCLI:
             registry=registry,
         )
 
-        assert len(mols_out) == 1
+        assert len(mols_out) > 1
 
     def test_load_multi_mol_smi(self, toolkit):
         """Test loading multiple molecules from SMILES in a .smi file"""
@@ -200,7 +196,7 @@ class TestGenerateConformersCLI:
             registry=registry,
         )
 
-        assert len(mols_out) == 3
+        assert len(mols_out) > 3
 
     def test_load_ambiguous_stereo_smi(self, toolkit):
         """Test loading a molecule with ambiguous stereo from SMILES and enumerating stereoisomers"""
@@ -266,8 +262,8 @@ class TestGenerateConformersCLI:
         )
 
 
-@pytest.mark.skipif(not RDKIT_AVAILABLE, reason="requires rdkit")
-@pytest.mark.skipif(not OPENEYE_AVAILABLE, reason="requires openeye")
+@requires_rdkit
+@requires_openeye
 def test_different_toolkits():
     """Test that different --toolkit argumnents produce different results"""
     from openff.cli.tests.utils import get_data_file_path
