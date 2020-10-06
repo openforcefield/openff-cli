@@ -81,12 +81,16 @@ def generate_conformers(
         mols = mols_with_unpacked_stereoisomers
 
     for mol in mols:
-        # TODO: Keep some conformers, if found in input molecule?
+        existing_conf = None
+        if mol.conformers:
+           existing_conf = copy.deepcopy(mol.conformers[0])
         mol.generate_conformers(
             toolkit_registry=registry,
-            n_conformers=20,
+            n_conformers=100,
             rms_cutoff=0.25 * unit.angstrom,
         )
+        if existing_conf:
+            mol.add_conformers(existing_conf)
 
     # TODO: What happens if some molecules in a multi-molecule file have charges, others don't?
     mols_with_charges = []
@@ -97,7 +101,7 @@ def generate_conformers(
     mols_out = []
     for mol in mols:
         simulation, partial_charges = _build_simulation(
-            molecule=mol, forcefield=ff, mols_with_charge=mols_with_charges
+            molecule=mol, forcefield=ff, mols_with_charge=[mol]
         )
         mol._partial_charges = partial_charges
 
