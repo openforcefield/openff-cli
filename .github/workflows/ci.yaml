@@ -23,7 +23,7 @@ jobs:
 
     - uses: goanpeca/setup-miniconda@v1
       name: Install both RDKit and OpenEye toolkits
-      if: ${{ matrix.cfg.openeye == 'TRUE' }}
+      if: ${{ matrix.openeye == 'TRUE' }}
       with:
         python-version: ${{ matrix.python-version }}
         activate-environment: test
@@ -33,7 +33,7 @@ jobs:
 
     - uses: goanpeca/setup-miniconda@v1
       name: Install only RDKit
-      if: ${{ matrix.cfg.openeye == 'FALSE' }}
+      if: ${{ matrix.openeye == 'FALSE' }}
       with:
         python-version: ${{ matrix.python-version }}
         activate-environment: test
