@@ -169,9 +169,9 @@ class TestGenerateConformersCLI:
     def test_load_one_mol_smi(self, toolkit):
         """Test loading one molecule from SMILES in a .smi file"""
         registry = make_registry(toolkit)
-        ebastine = get_data_file_path("molecules/ebastine.smi")
+        azidoazide = get_data_file_path("molecules/azidoazide.smi")
         mols_out = generate_conformers(
-            molecule=ebastine,
+            molecule=azidoazide,
             forcefield="openff-1.0.0.offxml",
             registry=registry,
         )
@@ -234,7 +234,7 @@ class TestGenerateConformersCLI:
         from openff.cli.tests.utils import get_data_file_path
 
         registry = make_registry(toolkit)
-        mol = get_data_file_path("molecules/ebastine.smi")
+        mol = get_data_file_path("molecules/azidoazide.smi")
         parsley_1_0_0 = generate_conformers(
             molecule=mol,
             forcefield="openff-1.0.0",
@@ -276,7 +276,7 @@ def test_different_toolkits():
 
     rdkit = make_registry("rdkit")
     openeye = make_registry("openeye")
-    mol = get_data_file_path("molecules/ebastine.smi")
+    mol = get_data_file_path("molecules/azidoazide.smi")
     rdkit_results = generate_conformers(
         molecule=mol,
         forcefield="openff-1.0.0",
