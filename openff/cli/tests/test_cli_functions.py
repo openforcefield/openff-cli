@@ -201,7 +201,7 @@ class TestGenerateConformersCLI:
             registry=registry,
         )
 
-        assert len(mols_out) == 2
+        assert len(mols_out) == 4
 
     def test_preserve_stereo_smi(self, toolkit):
         """Test loading a molecule with defined stereo from SMILES and preserving that stereochemistry"""

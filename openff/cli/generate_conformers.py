@@ -82,15 +82,15 @@ def generate_conformers(
 
     for mol in mols:
         existing_conf = None
-        if mol.conformers:
-           existing_conf = copy.deepcopy(mol.conformers[0])
+        if mol.conformers is not None:
+            existing_conf = deepcopy(mol.conformers[0])
         mol.generate_conformers(
             toolkit_registry=registry,
             n_conformers=100,
             rms_cutoff=0.25 * unit.angstrom,
         )
-        if existing_conf:
-            mol.add_conformers(existing_conf)
+        if existing_conf is not None:
+            mol.add_conformer(existing_conf)
 
     # TODO: What happens if some molecules in a multi-molecule file have charges, others don't?
     mols_with_charges = []
@@ -100,8 +100,14 @@ def generate_conformers(
 
     mols_out = []
     for mol in mols:
+        if mol in mols_with_charges:
+            mol_with_charge = [mol]
+        else:
+            mol_with_charge = []
         simulation, partial_charges = _build_simulation(
-            molecule=mol, forcefield=ff, mols_with_charge=[mol]
+            molecule=mol,
+            forcefield=ff,
+            mols_with_charge=mol_with_charge,
         )
         mol._partial_charges = partial_charges
 
