@@ -30,4 +30,6 @@ def get_versions():
 
 
 if __name__ == "__main__":
-    exit(get_versions())
+    # TODO: Have this function return the string, without printing above
+    #  or return an exit code here
+    print(get_versions())
