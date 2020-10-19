@@ -47,7 +47,11 @@ class TestGenerateConformersCalls(TestCLICalls):
         # TODO: This should maybe fail before checking the toolkit,
         #  based on missing required arguments
         _, err = self.call(
-            f"python {CLI_ROOT}/openff/cli/generate_conformers.py --toolkit magic",
+            (
+                f"python {CLI_ROOT}/openff/cli/generate_conformers.py "
+                "--forcefield openff-1.0.0 --toolkit magic "
+                "--molecule molecule.sdf"
+            ),
             raise_err=False,
         )
         assert "openff.cli.utils.exceptions.UnsupportedToolkitError" in err

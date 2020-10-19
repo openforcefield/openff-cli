@@ -301,38 +301,46 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Generate conformers with cheminformatics toolkits"
     )
-    parser.add_argument(
+    parser._action_groups.pop()
+    required_args = parser.add_argument_group("required arguments")
+    optional_args = parser.add_argument_group("optional arguments")
+
+    required_args.add_argument(
         "-t",
         "--toolkit",
         type=str,
-        help="Name of the underlying cheminformatics toolkit to use",
+        required=True,
+        help="Name of the underlying cheminformatics toolkit to use. Accepted"
+        " values are openeye and rdkit",
     )
-    parser.add_argument(
+    required_args.add_argument(
         "-f",
         "--forcefield",
         type=str,
-        help="Name of the force field to use",
+        required=True,
+        help="Name of the force field to use, i.e. openff-1.0.0",
     )
-    parser.add_argument(
+    required_args.add_argument(
         "-m",
         "--molecule",
         type=str,
+        required=True,
         help="Path to an input file containing a molecule(s)",
     )
-    parser.add_argument(
+    optional_args.add_argument(
         "-r",
         "--rms-cutoff",
         type=float,
         default=0.25,
         help="The redundancy cutoff between pre-minimized conformers",
     )
-    parser.add_argument(
+    optional_args.add_argument(
         "-p",
         "--prefix",
         type=str,
-        help="The prefix for output molecules",
+        help="The prefix for filenames of output molecules",
     )
-    parser.add_argument(
+    optional_args.add_argument(
         "--constrained",
         type=bool,
         default=False,
