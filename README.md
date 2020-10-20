@@ -42,6 +42,8 @@ CMILES              	0.1.5
 
 Generate conformers from a starting structure, and minimize them using an OpenFF force field. Toolkit wrappers in the OpenFF Toolkit is used to call either [The RDKit](https://open-forcefield-toolkit.readthedocs.io/en/0.7.2/api/generated/openforcefield.utils.toolkits.RDKitToolkitWrapper.html#openforcefield.utils.toolkits.RDKitToolkitWrapper) or [OpenEye Omega](https://open-forcefield-toolkit.readthedocs.io/en/0.7.2/api/generated/openforcefield.utils.toolkits.OpenEyeToolkitWrapper.html#openforcefield.utils.toolkits.OpenEyeToolkitWrapper) to generate conformers, which are then energy-minimized with OpenMM.
 
+This requires [`OpenFF Toolkit`](https://github.com/openforcefield/openforcefield) version 0.7.1 or newer.
+
 ```shell
 $ python openff/cli/generate_conformers.py --help
 usage: generate_conformers.py [-h] -t TOOLKIT -f FORCEFIELD -m MOLECULE
