@@ -8,6 +8,8 @@ from openforcefield.typing.engines.smirnoff import ForceField
 from openforcefield.utils.toolkits import ToolkitRegistry
 from simtk import openmm, unit
 
+from openff.cli.utils.utils import _enforce_dependency_version
+
 
 def generate_conformers(
     molecule: str,
@@ -16,6 +18,8 @@ def generate_conformers(
     constrained: bool = False,
     prefix: Optional[str] = None,
 ) -> List[Molecule]:
+
+    _enforce_dependency_version("openforcefield", "0.7.1.")
 
     ff_name = forcefield
     if constrained:
