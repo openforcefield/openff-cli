@@ -9,4 +9,4 @@ def _enforce_dependency_version(package, minimum_version):
 
     assert parse(package_version) > parse(
         minimum_version
-    ), "Need at least version {'.'.join(minimum_version)} of package {package}"
+    ), f"Need at least version {minimum_version} of package {package}"
