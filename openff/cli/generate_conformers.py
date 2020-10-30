@@ -118,7 +118,7 @@ def generate_conformers(
             simulation = _minimize_conformer(simulation, conformer)
             energy, positions = _get_conformer_data(simulation)
             mol = _reconstruct_mol_from_conformer(mol, positions)
-            _add_metadata_to_mol(mol, energy, registry.toolkit_version, forcefield)
+            _add_metadata_to_mol(mol, energy, toolkit_version, forcefield)
             mols_out.append(mol)
 
     mols_out = _sort_mols(mols_out)
@@ -276,7 +276,7 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    registry = make_registry(args.toolkit)
+    registry, toolkit_version = make_registry(args.toolkit)
 
     mols = generate_conformers(
         molecule=args.molecule,

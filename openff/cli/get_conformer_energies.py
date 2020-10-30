@@ -1,5 +1,5 @@
 import argparse
-from typing import List, Optional
+from typing import List
 
 from openforcefield.topology import Molecule
 from openforcefield.utils.toolkits import ToolkitRegistry
@@ -20,7 +20,6 @@ def get_conformer_energies(
     registry: ToolkitRegistry,
     forcefield: str,
     constrained: bool = False,
-    prefix: Optional[str] = None,
 ) -> List[Molecule]:
 
     _enforce_dependency_version("openforcefield", "0.7.0")
@@ -37,9 +36,9 @@ def get_conformer_energies(
         loaded_molecules = [loaded_molecules]
 
     mols = [loaded_molecules[0]]
-    for molecule in loaded_molecules[1:]:
-        if molecule == mols[-1]:
-            for conformer in molecule.conformers:
+    for mol in loaded_molecules[1:]:
+        if mol == mols[-1]:
+            for conformer in mol.conformers:
                 mols[-1].add_conformer(conformer)
         else:
             mols.append(molecule)
@@ -89,13 +88,10 @@ def get_conformer_energies(
             mol.conformers[i] = min_positions
         minimized_mols.append(mol)
 
-    _print_mol_data(mols=minimized_mols, prefix=prefix)
+    return minimized_mols
 
 
-def _print_mol_data(mols, prefix=None):
-    if prefix is None:
-        prefix = "molecules"
-
+def _print_mol_data(mols):
     pre_key = "original conformer energies (kcal/mol)"
     min_key = "minimized conformer energies (kcal/mol)"
     for mol_idx, mol in enumerate(mols):
@@ -147,12 +143,6 @@ if __name__ == "__main__":
         help="Path to an input file containing a molecule(s), single or multi-conformers",
     )
     optional_args.add_argument(
-        "-p",
-        "--prefix",
-        type=str,
-        help="The prefix for filenames of output molecules",
-    )
-    optional_args.add_argument(
         "--constrained",
         type=bool,
         default=False,
@@ -160,12 +150,13 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    registry = make_registry(args.toolkit)
+    registry, _ = make_registry(args.toolkit)
 
-    get_conformer_energies(
+    mols = get_conformer_energies(
         molecule=args.molecule,
         registry=registry,
         forcefield=args.forcefield,
         constrained=args.constrained,
-        prefix=args.prefix,
     )
+
+    _print_mol_data(mols)
