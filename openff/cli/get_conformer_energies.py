@@ -2,13 +2,14 @@ import argparse
 from typing import List, Optional
 
 from openforcefield.topology import Molecule
-from openforcefield.typing.engines.smirnoff import ForceField
 from openforcefield.utils.toolkits import ToolkitRegistry
 from simtk import unit
 
-from openff.cli.generate_conformers import (
+from openff.cli.core import (
     _build_simulation,
-    _get_minimized_data,
+    _get_conformer_data,
+    _get_forcefield,
+    _minimize_conformer,
     make_registry,
 )
 from openff.cli.utils.utils import _enforce_dependency_version
@@ -49,15 +50,7 @@ def get_conformer_energies(
         f"{n_molecules} unique molecule(s) loaded, with {n_conformers} total conformers"
     )
 
-    # This is duplicated from generate_conformers
-    ff_name = forcefield
-    if constrained:
-        split_name = ff_name.split("-")
-        split_name[0] = "openff_unconstrained"
-        ff_name = "-".join(split_name)
-    if not ff_name.endswith(".offxml"):
-        ff_name += ".offxml"
-    ff = ForceField(ff_name)
+    ff = _get_forcefield(forcefield, constrained)
 
     mols_with_charges = []
     for mol in mols:
@@ -78,15 +71,22 @@ def get_conformer_energies(
         )
         mol._partial_charges = partial_charges
 
-        mol.properties["minimized against: "] = ff_name
-        mol.properties["conformer energies (kcal/mol)"] = list()
+        mol.properties["minimized against: "] = forcefield
+        mol.properties["original conformer energies (kcal/mol)"] = mol.n_conformers * [
+            None
+        ]
+        mol.properties["minimized conformer energies (kcal/mol)"] = mol.n_conformers * [
+            None
+        ]
         for i, conformer in enumerate(mol.conformers):
-            energy, positions = _get_minimized_data(conformer, simulation)
-            # mol = _reconstruct_mol_from_conformer(mol, positions)
-            # This function could be moved to a common place and modified
-            # to more generally take in a set of optional args
-            mol.properties["conformer energies (kcal/mol)"].append(energy)
-            mol.conformers[i] = positions
+            simulation.context.setPositions(conformer)
+            pre_energy, pre_positions = _get_conformer_data(simulation)
+            mol.properties["original conformer energies (kcal/mol)"][i] = pre_energy
+
+            simulation = _minimize_conformer(simulation, conformer)
+            min_energy, min_positions = _get_conformer_data(simulation)
+            mol.properties["minimized conformer energies (kcal/mol)"][i] = min_energy
+            mol.conformers[i] = min_positions
         minimized_mols.append(mol)
 
     _print_mol_data(mols=minimized_mols, prefix=prefix)
@@ -96,18 +96,21 @@ def _print_mol_data(mols, prefix=None):
     if prefix is None:
         prefix = "molecules"
 
+    pre_key = "original conformer energies (kcal/mol)"
+    min_key = "minimized conformer energies (kcal/mol)"
     for mol_idx, mol in enumerate(mols):
         forcefield = mol.properties["minimized against: "]
         print(f"printing mol {mol_idx}, minimized against {forcefield}")
-        conformer_energies = mol.properties["conformer energies (kcal/mol)"]
-        for conformer_idx, conformer_energy in enumerate(conformer_energies):
+        for conformer_idx in range(mol.n_conformers):
+            pre_energy = mol.properties[pre_key][conformer_idx]
+            min_energy = mol.properties[min_key][conformer_idx]
             print(
                 "%5d / %5d : %8.3f kcal/mol %8.3f kcal/mol  %8.3f Angstroms"
                 % (
                     conformer_idx + 1,
                     mol.n_conformers,
-                    0.0,  # original energy goes here
-                    conformer_energy / unit.kilocalories_per_mole,
+                    pre_energy / unit.kilocalories_per_mole,
+                    min_energy / unit.kilocalories_per_mole,
                     0.0,  # RMSD goes here
                 )
             )
