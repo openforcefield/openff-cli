@@ -115,8 +115,8 @@ def generate_conformers(
         mol._partial_charges = partial_charges
 
         for i, conformer in enumerate(mol.conformers):
-            simulation = _minimize_conformer(simulation)
-            energy, positions = _get_conformer_data(conformer, simulation)
+            simulation = _minimize_conformer(simulation, conformer)
+            energy, positions = _get_conformer_data(simulation)
             mol = _reconstruct_mol_from_conformer(mol, positions)
             _add_metadata_to_mol(mol, energy, registry.toolkit_version, forcefield)
             mols_out.append(mol)
