@@ -150,7 +150,7 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    registry, _ = make_registry(args.toolkit)
+    registry = make_registry(args.toolkit)
 
     mols = get_conformer_energies(
         molecule=args.molecule,

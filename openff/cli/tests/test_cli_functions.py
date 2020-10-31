@@ -47,7 +47,7 @@ class TestCheckVersions:
 class TestGenerateConformersCLI:
     def test_load_one_mol_sdf_without_charge(self, toolkit):
         """Test loading one molecule from a .sdf file WITHOUT charges"""
-        registry, _ = make_registry(toolkit)
+        registry = make_registry(toolkit)
         ethanol = get_data_file_path("molecules/ethanol.sdf")
         assert Molecule.from_file(ethanol).partial_charges is None
 
@@ -62,7 +62,7 @@ class TestGenerateConformersCLI:
 
     def test_load_one_mol_sdf_with_charge(self, toolkit):
         """Test loading one molecule from a .sdf file WITH charges"""
-        registry, _ = make_registry(toolkit)
+        registry = make_registry(toolkit)
         ethanol_partial_charges = get_data_file_path(
             "molecules/ethanol_partial_charges.sdf"
         )
@@ -82,7 +82,7 @@ class TestGenerateConformersCLI:
     @pytest.mark.skipif(True, reason="Test requires OpenEye toolkit")
     def test_load_one_mol_mol2_without_charge(self, toolkit):
         """Test loading one molecule from a .mol2 file WITH charges"""
-        registry, _ = make_registry(toolkit)
+        registry = make_registry(toolkit)
         toluene_partial_charges = get_data_file_path("molecules/toluene_charged.mol2")
         charges_in = Molecule.from_file(toluene_partial_charges).partial_charges
 
@@ -110,7 +110,7 @@ class TestGenerateConformersCLI:
         )
         ```
         """
-        registry, _ = make_registry(toolkit)
+        registry = make_registry(toolkit)
         ethanol_partial_charges = get_data_file_path(
             "molecules/ethanol_no_charges.mol2"
         )
@@ -133,7 +133,7 @@ class TestGenerateConformersCLI:
 
     def test_p_prefix(self, toolkit):
         """Ensure the output file has the -p prefix"""
-        registry, _ = make_registry(toolkit)
+        registry = make_registry(toolkit)
 
         ethanol = get_data_file_path("molecules/ethanol.sdf")
 
@@ -159,7 +159,7 @@ class TestGenerateConformersCLI:
 
     def test_load_multi_mol_sdf(self, toolkit):
         """Test the case of an SDF file with multiple molecules"""
-        registry, _ = make_registry(toolkit)
+        registry = make_registry(toolkit)
         butane_multi = get_data_file_path("molecules/butane_multi.sdf")
         generate_conformers(
             molecule=butane_multi,
@@ -169,7 +169,7 @@ class TestGenerateConformersCLI:
 
     def test_load_one_mol_smi(self, toolkit):
         """Test loading one molecule from SMILES in a .smi file"""
-        registry, _ = make_registry(toolkit)
+        registry = make_registry(toolkit)
         azidoazide = get_data_file_path("molecules/azidoazide.smi")
         mols_out = generate_conformers(
             molecule=azidoazide,
@@ -181,7 +181,7 @@ class TestGenerateConformersCLI:
 
     def test_load_multi_mol_smi(self, toolkit):
         """Test loading multiple molecules from SMILES in a .smi file"""
-        registry, _ = make_registry(toolkit)
+        registry = make_registry(toolkit)
         dyes = get_data_file_path("molecules/multi_mols.smi")
         mols_out = generate_conformers(
             molecule=dyes,
@@ -194,7 +194,7 @@ class TestGenerateConformersCLI:
     def test_load_ambiguous_stereo_smi(self, toolkit):
         """Test loading a molecule with ambiguous stereo from SMILES and enumerating stereoisomers"""
         # TODO: Should the CLI accept both paths and SMILES as strings, or only files?
-        registry, _ = make_registry(toolkit)
+        registry = make_registry(toolkit)
         mol = get_data_file_path("molecules/dichloroethene_ambiguous_stereo.smi")
         mols_out = generate_conformers(
             molecule=mol,
@@ -206,7 +206,7 @@ class TestGenerateConformersCLI:
 
     def test_preserve_stereo_smi(self, toolkit):
         """Test loading a molecule with defined stereo from SMILES and preserving that stereochemistry"""
-        registry, _ = make_registry(toolkit)
+        registry = make_registry(toolkit)
         mol = get_data_file_path("molecules/dichloroethene_stereo.smi")
         mols_out = generate_conformers(
             molecule=mol,
@@ -222,7 +222,7 @@ class TestGenerateConformersCLI:
         can at least do a basic conformer generaiton"""
         # TODO: Possibly ensure this produces non-garbage output,
         #  instead of only "doesn't raise an error we know of"
-        registry, _ = make_registry(toolkit)
+        registry = make_registry(toolkit)
         mol = get_data_file_path("molecules/ethanol.sdf")
         generate_conformers(
             molecule=mol,
@@ -234,7 +234,7 @@ class TestGenerateConformersCLI:
         """Test that different --forcefield arguments produce different results"""
         from openff.cli.tests.utils import get_data_file_path
 
-        registry, _ = make_registry(toolkit)
+        registry = make_registry(toolkit)
         mol = get_data_file_path("molecules/azidoazide.smi")
         parsley_1_0_0 = generate_conformers(
             molecule=mol,
@@ -264,7 +264,7 @@ class TestGenerateConformersCLI:
 )
 class TestGetConformerEnergiesCLI:
     def test_get_conformer_energies(self, toolkit):
-        registry, _ = make_registry(toolkit)
+        registry = make_registry(toolkit)
         mols = get_conformer_energies(
             molecule=get_data_file_path("molecules/ruxolitinib_conformers.sdf"),
             registry=registry,
@@ -284,14 +284,14 @@ class TestGetConformerEnergiesCLI:
 def test_make_registry():
     """Test the behavior of the make_registry helper function. This is
     hard-coded to each toolkit as specific objects needed to be found."""
-    rdkit_registry, _ = make_registry("rdkit")
+    rdkit_registry = make_registry("rdkit")
     assert isinstance(rdkit_registry.registered_toolkits[0], RDKitToolkitWrapper)
     assert not any(
         isinstance(tkw, OpenEyeToolkitWrapper)
         for tkw in rdkit_registry.registered_toolkits
     )
 
-    openeye_registry, _ = make_registry("openeye")
+    openeye_registry = make_registry("openeye")
     assert isinstance(openeye_registry.registered_toolkits[0], OpenEyeToolkitWrapper)
     assert not any(
         isinstance(tkw, RDKitToolkitWrapper)
@@ -337,7 +337,7 @@ def test_parsing_error():
         raise MoleculeParsingError
 
     # Try to parse a MOL2 file with RDKit
-    registry, _ = make_registry("rdkit")
+    registry = make_registry("rdkit")
     mol = get_data_file_path("molecules/ethanol_no_charges.mol2")
     exec_msg = (
         r"Failed to parse a molecule file. Attempted to parse file "

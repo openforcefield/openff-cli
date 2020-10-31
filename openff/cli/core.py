@@ -6,25 +6,24 @@ from openforcefield.utils.toolkits import ToolkitRegistry
 from simtk import openmm, unit
 
 
-def make_registry(toolkit: str) -> Tuple[ToolkitRegistry, str]:
+def make_registry(toolkit: str) -> ToolkitRegistry:
     if toolkit.lower() == "openeye":
-        import openeye
         from openforcefield.utils.toolkits import OpenEyeToolkitWrapper
 
         toolkit_registry = ToolkitRegistry(toolkit_precedence=[OpenEyeToolkitWrapper])
-        toolkit_version = "openeye-toolkits version " + openeye.__version__
     elif toolkit.lower() == "rdkit":
-        import rdkit
         from openforcefield.utils.toolkits import RDKitToolkitWrapper
 
         toolkit_registry = ToolkitRegistry(toolkit_precedence=[RDKitToolkitWrapper])
-        toolkit_version = "rdkit version " + rdkit.__version__
     else:
         from openff.cli.utils.exceptions import UnsupportedToolkitError
 
         raise UnsupportedToolkitError(toolkit=toolkit)
 
-    return toolkit_registry, toolkit_version
+    # Checks later assume that this is length 1. This should be changed if
+    # multiple toolkits (i.e. RDKit and AmberTools) are needed at once
+    assert len(toolkit_registry.registered_toolkit_versions) == 1
+    return toolkit_registry
 
 
 def _get_forcefield(forcefield: str, constrained: bool) -> ForceField:

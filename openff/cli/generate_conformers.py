@@ -118,7 +118,7 @@ def generate_conformers(
             simulation = _minimize_conformer(simulation, conformer)
             energy, positions = _get_conformer_data(simulation)
             mol = _reconstruct_mol_from_conformer(mol, positions)
-            _add_metadata_to_mol(mol, energy, toolkit_version, forcefield)
+            _add_metadata_to_mol(mol, energy, registry, forcefield)
             mols_out.append(mol)
 
     mols_out = _sort_mols(mols_out)
@@ -171,10 +171,17 @@ def _reconstruct_mol_from_conformer(
 
 
 def _add_metadata_to_mol(
-    mol: Molecule, energy: unit.Quantity, toolkit_version: str, ff_name: str
+    mol: Molecule,
+    energy: unit.Quantity,
+    toolkit_registry: ToolkitRegistry,
+    ff_name: str,
 ) -> None:
+    toolkit_name = [*toolkit_registry.registered_toolkit_versions][0]
+    toolkit_version = toolkit_registry.registered_toolkit_versions[toolkit_name]
     mol.properties["absolute energy (kcal/mol): "] = energy
-    mol.properties["conformer generation toolkit: "] = toolkit_version
+    mol.properties["conformer generation toolkit: "] = (
+        toolkit_name + " " + toolkit_version
+    )
     mol.properties["minimized against: "] = ff_name
 
 
@@ -276,7 +283,7 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    registry, toolkit_version = make_registry(args.toolkit)
+    registry = make_registry(args.toolkit)
 
     mols = generate_conformers(
         molecule=args.molecule,
