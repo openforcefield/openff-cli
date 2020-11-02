@@ -85,6 +85,8 @@ def _get_conformer_data(
     energy = state.getPotentialEnergy()
     coords = state.getPositions()
 
+    coords = np.array([[atom.x, atom.y, atom.z] for atom in coords]) * unit.nanometer
+
     return energy, coords
 
 
