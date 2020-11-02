@@ -72,15 +72,15 @@ def get_conformer_energies(
         mol._partial_charges = partial_charges
 
         mol.properties["minimized against: "] = forcefield
-        mol.properties["original conformer energies (kcal/mol)"] = mol.n_conformers * [
-            None
+
+        conformer_property_keys = [
+            "original conformer energies (kcal/mol)",
+            "minimized conformer energies (kcal/mol)",
+            "RMSD of minimized conformers (angstrom)",
         ]
-        mol.properties["minimized conformer energies (kcal/mol)"] = mol.n_conformers * [
-            None
-        ]
-        mol.properties["RMSD of minimized conformers (angstrom)"] = mol.n_conformers * [
-            None
-        ]
+        for prop in conformer_property_keys:
+            mol.properties[prop] = mol.n_conformers * [None]
+
         for i, conformer in enumerate(mol.conformers):
             simulation.context.setPositions(conformer)
             pre_energy, pre_positions = _get_conformer_data(simulation)
@@ -103,7 +103,11 @@ def _print_mol_data(mols):
     rmsd_key = "RMSD of minimized conformers (angstrom)"
     for mol_idx, mol in enumerate(mols):
         forcefield = mol.properties["minimized against: "]
-        print(f"printing mol {mol_idx}, minimized against {forcefield}")
+        print(f"Conformer energies of mol {mol.name}, minimized against {forcefield}")
+        print(
+            "Conformer         Initial PE         Minimized PE       "
+            "RMS between initial and minimized conformer"
+        )
         for conformer_idx in range(mol.n_conformers):
             pre_energy = mol.properties[pre_key][conformer_idx]
             min_energy = mol.properties[min_key][conformer_idx]

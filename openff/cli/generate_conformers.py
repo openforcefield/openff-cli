@@ -2,7 +2,6 @@ import argparse
 from copy import deepcopy
 from typing import List, Optional
 
-import numpy as np
 from openforcefield.topology.molecule import Molecule, UndefinedStereochemistryError
 from openforcefield.utils.toolkits import ToolkitRegistry
 from simtk import unit
@@ -163,10 +162,7 @@ def _reconstruct_mol_from_conformer(
 ) -> Molecule:
     mol = deepcopy(mol)
     mol._conformers = None
-    min_coords = (
-        np.array([[atom.x, atom.y, atom.z] for atom in positions]) * unit.nanometer
-    )
-    mol.add_conformer(min_coords)
+    mol.add_conformer(positions)
     return mol
 
 

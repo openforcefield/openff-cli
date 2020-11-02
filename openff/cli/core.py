@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import List, Tuple
 
 import numpy as np
 from openforcefield.topology.molecule import Molecule
@@ -115,7 +115,7 @@ def _get_rms_two_conformers(
     mol_copy.add_conformer(positions2)
 
     rdmol = mol_copy.to_rdkit()
-    rmslist = []
+    rmslist: List = []
     rdMolAlign.AlignMolConformers(rdmol, RMSlist=rmslist)
 
     return rmslist[0]
