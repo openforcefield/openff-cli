@@ -1,6 +1,7 @@
 from typing import Tuple
 
 import numpy as np
+from openforcefield.topology.molecule import Molecule
 from openforcefield.typing.engines.smirnoff import ForceField
 from openforcefield.utils.toolkits import ToolkitRegistry
 from simtk import openmm, unit
@@ -98,3 +99,23 @@ def _minimize_conformer(
     simulation.minimizeEnergy()
 
     return simulation
+
+
+def _get_rms_two_conformers(
+    mol: Molecule, positions1: unit.Quantity, positions2: unit.Quantity
+) -> float:
+    """Find the RMSD between two conformers of a molecule using RDKit"""
+    # TODO: Is it worth making Molecule.get_rmsd(), which operates
+    # through ToolkitWrapper methods?
+    from rdkit.Chem import rdMolAlign
+
+    mol_copy = Molecule(mol)
+    mol_copy._conformers = None
+    mol_copy.add_conformer(positions1)
+    mol_copy.add_conformer(positions2)
+
+    rdmol = mol_copy.to_rdkit()
+    rmslist = []
+    rdMolAlign.AlignMolConformers(rdmol, RMSlist=rmslist)
+
+    return rmslist[0]

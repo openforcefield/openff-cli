@@ -9,6 +9,7 @@ from openff.cli.core import (
     _build_simulation,
     _get_conformer_data,
     _get_forcefield,
+    _get_rms_two_conformers,
     _minimize_conformer,
     make_registry,
 )
@@ -77,6 +78,9 @@ def get_conformer_energies(
         mol.properties["minimized conformer energies (kcal/mol)"] = mol.n_conformers * [
             None
         ]
+        mol.properties["RMSD of minimized conformers (angstrom)"] = mol.n_conformers * [
+            None
+        ]
         for i, conformer in enumerate(mol.conformers):
             simulation.context.setPositions(conformer)
             pre_energy, pre_positions = _get_conformer_data(simulation)
@@ -86,6 +90,8 @@ def get_conformer_energies(
             min_energy, min_positions = _get_conformer_data(simulation)
             mol.properties["minimized conformer energies (kcal/mol)"][i] = min_energy
             mol.conformers[i] = min_positions
+            rms = _get_rms_two_conformers(mol, pre_positions, min_positions)
+            mol.properties["RMSD of minimized conformers (angstrom)"][i] = rms
         minimized_mols.append(mol)
 
     return minimized_mols
@@ -94,12 +100,14 @@ def get_conformer_energies(
 def _print_mol_data(mols):
     pre_key = "original conformer energies (kcal/mol)"
     min_key = "minimized conformer energies (kcal/mol)"
+    rmsd_key = "RMSD of minimized conformers (angstrom)"
     for mol_idx, mol in enumerate(mols):
         forcefield = mol.properties["minimized against: "]
         print(f"printing mol {mol_idx}, minimized against {forcefield}")
         for conformer_idx in range(mol.n_conformers):
             pre_energy = mol.properties[pre_key][conformer_idx]
             min_energy = mol.properties[min_key][conformer_idx]
+            rmsd = mol.properties[rmsd_key][conformer_idx]
             print(
                 "%5d / %5d : %8.3f kcal/mol %8.3f kcal/mol  %8.3f Angstroms"
                 % (
@@ -107,7 +115,7 @@ def _print_mol_data(mols):
                     mol.n_conformers,
                     pre_energy / unit.kilocalories_per_mole,
                     min_energy / unit.kilocalories_per_mole,
-                    0.0,  # RMSD goes here
+                    rmsd,
                 )
             )
 
