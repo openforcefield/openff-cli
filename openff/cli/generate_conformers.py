@@ -1,13 +1,18 @@
 import argparse
 from copy import deepcopy
-from typing import List, Optional, Tuple
+from typing import List, Optional
 
-import numpy as np
 from openforcefield.topology.molecule import Molecule, UndefinedStereochemistryError
-from openforcefield.typing.engines.smirnoff import ForceField
 from openforcefield.utils.toolkits import ToolkitRegistry
-from simtk import openmm, unit
+from simtk import unit
 
+from openff.cli.core import (
+    _build_simulation,
+    _get_conformer_data,
+    _get_forcefield,
+    _minimize_conformer,
+    make_registry,
+)
 from openff.cli.utils.utils import _enforce_dependency_version
 
 
@@ -21,14 +26,7 @@ def generate_conformers(
 
     _enforce_dependency_version("openforcefield", "0.7.1.")
 
-    ff_name = forcefield
-    if constrained:
-        split_name = ff_name.split("-")
-        split_name[0] = "openff_unconstrained"
-        ff_name = "-".join(split_name)
-    if not ff_name.endswith(".offxml"):
-        ff_name += ".offxml"
-    ff = ForceField(ff_name)
+    ff = _get_forcefield(forcefield, constrained)
 
     file_format = molecule.split(".")[-1]
 
@@ -116,9 +114,10 @@ def generate_conformers(
         mol._partial_charges = partial_charges
 
         for i, conformer in enumerate(mol.conformers):
-            energy, positions = _get_minimized_data(conformer, simulation)
+            simulation = _minimize_conformer(simulation, conformer)
+            energy, positions = _get_conformer_data(simulation)
             mol = _reconstruct_mol_from_conformer(mol, positions)
-            _add_metadata_to_mol(mol, energy, registry.toolkit_version, ff_name)
+            _add_metadata_to_mol(mol, energy, registry, forcefield)
             mols_out.append(mol)
 
     mols_out = _sort_mols(mols_out)
@@ -157,76 +156,28 @@ def _collapse_conformers(molecules):
     return collapsed_molecules
 
 
-def _build_simulation(molecule, forcefield, mols_with_charge):
-    """Given a Molecule and ForceField, initialize a barebones OpenMM Simulation."""
-    off_top = molecule.to_topology()
-    system, ret_top = forcefield.create_openmm_system(
-        off_top,
-        charge_from_molecules=mols_with_charge,
-        allow_nonintegral_charges=True,
-        return_topology=True,
-    )
-
-    # Use OpenMM to compute initial and minimized energy for all conformers
-    integrator = openmm.VerletIntegrator(1 * unit.femtoseconds)
-    platform = openmm.Platform.getPlatformByName("Reference")
-    omm_top = off_top.to_openmm()
-    simulation = openmm.app.Simulation(omm_top, system, integrator, platform)
-
-    charges_from_top = [*ret_top.reference_molecules][0].partial_charges
-    if charges_from_top is not None:
-        partial_charges = charges_from_top
-    else:
-        # ret_top only has partial charges in OFFTK 0.8.0+, so may need to
-        # manually get partial charges from OpenMM if using OFFTK <= 0.7.1
-        partial_charges = [
-            system.getForces()[0].getParticleParameters(i)[0]
-            for i in range(molecule.n_atoms)
-        ]
-        # Unwrap list of Quantity objects into a single Quantity that contains a list
-        # Surely there's a simpler way to to this?
-        partial_charges = unit.Quantity(
-            np.asarray(
-                [val.value_in_unit(unit.elementary_charge) for val in partial_charges]
-            ),
-            unit=unit.elementary_charge,
-        )
-
-    return simulation, partial_charges
-
-
-def _get_minimized_data(
-    conformer: unit.Quantity, simulation: openmm.app.Simulation
-) -> Tuple[unit.Quantity]:
-    """Given an OpenMM simulation and conformer, minimze and return an energy"""
-    simulation.context.setPositions(conformer)
-    simulation.minimizeEnergy()
-
-    min_state = simulation.context.getState(getEnergy=True, getPositions=True)
-    min_energy = min_state.getPotentialEnergy()
-    min_coords = min_state.getPositions()
-
-    return min_energy, min_coords
-
-
 def _reconstruct_mol_from_conformer(
     mol: Molecule,
     positions: unit.Quantity,
 ) -> Molecule:
     mol = deepcopy(mol)
     mol._conformers = None
-    min_coords = (
-        np.array([[atom.x, atom.y, atom.z] for atom in positions]) * unit.nanometer
-    )
-    mol.add_conformer(min_coords)
+    mol.add_conformer(positions)
     return mol
 
 
 def _add_metadata_to_mol(
-    mol: Molecule, energy: unit.Quantity, toolkit_version: str, ff_name: str
+    mol: Molecule,
+    energy: unit.Quantity,
+    toolkit_registry: ToolkitRegistry,
+    ff_name: str,
 ) -> None:
+    toolkit_name = [*toolkit_registry.registered_toolkit_versions][0]
+    toolkit_version = toolkit_registry.registered_toolkit_versions[toolkit_name]
     mol.properties["absolute energy (kcal/mol): "] = energy
-    mol.properties["conformer generation toolkit: "] = toolkit_version
+    mol.properties["conformer generation toolkit: "] = (
+        toolkit_name + " " + toolkit_version
+    )
     mol.properties["minimized against: "] = ff_name
 
 
@@ -248,30 +199,6 @@ def _sort_mols(mols: List[Molecule]) -> List[Molecule]:
             sorted_mol.name += "_conf" + str(i)
             final_list.append(sorted_mol)
     return final_list
-
-
-def make_registry(toolkit: str) -> ToolkitRegistry:
-    if toolkit.lower() == "openeye":
-        import openeye
-        from openforcefield.utils.toolkits import OpenEyeToolkitWrapper
-
-        toolkit_registry = ToolkitRegistry(toolkit_precedence=[OpenEyeToolkitWrapper])
-        toolkit_version = "openeye-toolkits version " + openeye.__version__
-    elif toolkit.lower() == "rdkit":
-        import rdkit
-        from openforcefield.utils.toolkits import RDKitToolkitWrapper
-
-        toolkit_registry = ToolkitRegistry(toolkit_precedence=[RDKitToolkitWrapper])
-        toolkit_version = "rdkit version " + rdkit.__version__
-    else:
-        from openff.cli.utils.exceptions import UnsupportedToolkitError
-
-        raise UnsupportedToolkitError(toolkit=toolkit)
-
-    if not hasattr(toolkit_registry, "toolkit_version"):
-        toolkit_registry.toolkit_version = toolkit_version
-
-    return toolkit_registry
 
 
 def write_mols(

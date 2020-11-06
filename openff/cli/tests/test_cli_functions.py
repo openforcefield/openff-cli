@@ -18,6 +18,7 @@ from openff.cli.generate_conformers import (
     make_registry,
     write_mols,
 )
+from openff.cli.get_conformer_energies import get_conformer_energies
 from openff.cli.tests.utils import get_data_file_path
 
 # TODO: Run all tests in a safe temporary directory
@@ -252,6 +253,30 @@ class TestGenerateConformersCLI:
             parsley_1_0_0[0].conformers[0],
             parsley_1_2_0[0].conformers[0],
         )
+
+
+@pytest.mark.parametrize(
+    "toolkit",
+    [
+        pytest.param("rdkit", marks=requires_rdkit),
+        pytest.param("openeye", marks=requires_openeye),
+    ],
+)
+class TestGetConformerEnergiesCLI:
+    def test_get_conformer_energies(self, toolkit):
+        registry = make_registry(toolkit)
+        mols = get_conformer_energies(
+            molecule=get_data_file_path("molecules/ruxolitinib_conformers.sdf"),
+            registry=registry,
+            forcefield="openff-1.0.0",
+            constrained=False,
+        )
+
+        for mol in mols:
+            for conformer_idx in range(mol.n_conformers):
+                original = mol.properties["original conformer energies (kcal/mol)"]
+                minimized = mol.properties["minimized conformer energies (kcal/mol)"]
+                assert minimized < original
 
 
 @requires_rdkit
