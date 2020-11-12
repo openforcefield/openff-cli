@@ -26,7 +26,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-    - uses: goanpeca/setup-miniconda@v1
+    - uses: conda-incubator/setup-miniconda@v1
       name: Install both RDKit and OpenEye toolkits
       if: ${{ matrix.openeye == 'TRUE' }}
       with:
@@ -36,7 +36,7 @@ jobs:
         environment-file: devtools/conda-envs/test_env.yaml
         auto-activate-base: false
 
-    - uses: goanpeca/setup-miniconda@v1
+    - uses: conda-incubator/setup-miniconda@v1
       name: Install only RDKit
       if: ${{ matrix.openeye == 'FALSE' }}
       with:
