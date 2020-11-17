@@ -170,9 +170,9 @@ class TestGenerateConformersCLI:
     def test_load_one_mol_smi(self, toolkit):
         """Test loading one molecule from SMILES in a .smi file"""
         registry = make_registry(toolkit)
-        azidoazide = get_data_file_path("molecules/azidoazide.smi")
+        hexane = get_data_file_path("molecules/hexane.smi")
         mols_out = generate_conformers(
-            molecule=azidoazide,
+            molecule=hexane,
             forcefield="openff-1.0.0.offxml",
             registry=registry,
         )

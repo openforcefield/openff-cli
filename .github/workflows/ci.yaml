@@ -22,6 +22,7 @@ jobs:
     env:
       PYVER: ${{ matrix.python-version }}
       OE_LICENSE: ${{ github.workspace }}/oe_license.txt
+      COV: --cov=openff/cli --cov-report=xml --cov-config=setup.cfg --cov-append
 
     steps:
     - uses: actions/checkout@v2
@@ -88,8 +89,7 @@ jobs:
     - name: Run tests
       shell: bash -l {0}
       run: |
-        PYTEST_ARGS=" -v --cov=openff/cli/ --cov-report=xml --cov-config=setup.cfg"
-        pytest $PYTEST_ARGS openff/cli/tests
+        pytest -v $COV openff/cli/tests
 
     - name: Codecov
       uses: codecov/codecov-action@v1
