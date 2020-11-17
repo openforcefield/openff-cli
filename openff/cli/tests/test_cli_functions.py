@@ -78,16 +78,18 @@ class TestGenerateConformersCLI:
         assert len(mols_out) > 1
         assert np.allclose(mols_out[0].partial_charges, charges_in)
 
-    # TODO: Figure out how to skip a test based on a variable passed in through parametrize
-    @pytest.mark.skipif(True, reason="Test requires OpenEye toolkit")
     def test_load_one_mol_mol2_without_charge(self, toolkit):
         """Test loading one molecule from a .mol2 file WITH charges"""
+        if toolkit != "openeye":
+            pytest.skip("Test requires OpenEye toolkit")
         registry = make_registry(toolkit)
-        toluene_partial_charges = get_data_file_path("molecules/toluene_charged.mol2")
-        charges_in = Molecule.from_file(toluene_partial_charges).partial_charges
+        ethanol_partial_charges = get_data_file_path(
+            "molecules/ethanol_partial_charges.mol2"
+        )
+        charges_in = Molecule.from_file(ethanol_partial_charges).partial_charges
 
         mols_out = generate_conformers(
-            molecule=toluene_partial_charges,
+            molecule=ethanol_partial_charges,
             forcefield="openff-1.0.0.offxml",
             registry=registry,
         )
@@ -170,9 +172,9 @@ class TestGenerateConformersCLI:
     def test_load_one_mol_smi(self, toolkit):
         """Test loading one molecule from SMILES in a .smi file"""
         registry = make_registry(toolkit)
-        azidoazide = get_data_file_path("molecules/azidoazide.smi")
+        hexane = get_data_file_path("molecules/hexane.smi")
         mols_out = generate_conformers(
-            molecule=azidoazide,
+            molecule=hexane,
             forcefield="openff-1.0.0.offxml",
             registry=registry,
         )
@@ -252,6 +254,32 @@ class TestGenerateConformersCLI:
         assert not np.allclose(
             parsley_1_0_0[0].conformers[0],
             parsley_1_2_0[0].conformers[0],
+        )
+
+    def test_different_forcefield_constraints(self, toolkit):
+        """Test that the --constrained argument produces different results"""
+        from openff.cli.tests.utils import get_data_file_path
+
+        registry = make_registry(toolkit)
+        mol = get_data_file_path("molecules/azidoazide.smi")
+        constrained = generate_conformers(
+            molecule=mol,
+            forcefield="openff-1.0.0",
+            prefix="parsley100",
+            registry=registry,
+            constrained=True,
+        )
+        unconstrained = generate_conformers(
+            molecule=mol,
+            forcefield="openff-1.0.0",
+            prefix="parsley100",
+            registry=registry,
+            constrained=False,
+        )
+
+        assert not np.allclose(
+            constrained[0].conformers[0],
+            unconstrained[0].conformers[0],
         )
 
 
