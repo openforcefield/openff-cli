@@ -256,6 +256,32 @@ class TestGenerateConformersCLI:
             parsley_1_2_0[0].conformers[0],
         )
 
+    def test_different_forcefield_constraints(self, toolkit):
+        """Test that the --constrained argument produces different results"""
+        from openff.cli.tests.utils import get_data_file_path
+
+        registry = make_registry(toolkit)
+        mol = get_data_file_path("molecules/azidoazide.smi")
+        constrained = generate_conformers(
+            molecule=mol,
+            forcefield="openff-1.0.0",
+            prefix="parsley100",
+            registry=registry,
+            constrained=True,
+        )
+        unconstrained = generate_conformers(
+            molecule=mol,
+            forcefield="openff-1.0.0",
+            prefix="parsley100",
+            registry=registry,
+            constrained=False,
+        )
+
+        assert not np.allclose(
+            constrained[0].conformers[0],
+            unconstrained[0].conformers[0],
+        )
+
 
 @pytest.mark.parametrize(
     "toolkit",
