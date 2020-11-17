@@ -78,16 +78,18 @@ class TestGenerateConformersCLI:
         assert len(mols_out) > 1
         assert np.allclose(mols_out[0].partial_charges, charges_in)
 
-    # TODO: Figure out how to skip a test based on a variable passed in through parametrize
-    @pytest.mark.skipif(True, reason="Test requires OpenEye toolkit")
     def test_load_one_mol_mol2_without_charge(self, toolkit):
         """Test loading one molecule from a .mol2 file WITH charges"""
+        if toolkit != "openeye":
+            pytest.skip("Test requires OpenEye toolkit")
         registry = make_registry(toolkit)
-        toluene_partial_charges = get_data_file_path("molecules/toluene_charged.mol2")
-        charges_in = Molecule.from_file(toluene_partial_charges).partial_charges
+        ethanol_partial_charges = get_data_file_path(
+            "molecules/ethanol_partial_charges.mol2"
+        )
+        charges_in = Molecule.from_file(ethanol_partial_charges).partial_charges
 
         mols_out = generate_conformers(
-            molecule=toluene_partial_charges,
+            molecule=ethanol_partial_charges,
             forcefield="openff-1.0.0.offxml",
             registry=registry,
         )
