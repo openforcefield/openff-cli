@@ -44,12 +44,6 @@ def get_conformer_energies(
         else:
             mols.append(molecule)
 
-    n_molecules = len(mols)
-    n_conformers = sum([mol.n_conformers for mol in mols])
-    print(
-        f"{n_molecules} unique molecule(s) loaded, with {n_conformers} total conformers"
-    )
-
     ff = _get_forcefield(forcefield, constrained)
 
     mols_with_charges = []
@@ -98,30 +92,35 @@ def get_conformer_energies(
 
 
 def _print_mol_data(mols):
+    out = ""
+
+    n_molecules = len(mols)
+    n_conformers = sum([mol.n_conformers for mol in mols])
+    out += f"{n_molecules} unique molecule(s) loaded, with {n_conformers} total conformers\n"
+
     pre_key = "original conformer energies (kcal/mol)"
     min_key = "minimized conformer energies (kcal/mol)"
     rmsd_key = "RMSD of minimized conformers (angstrom)"
     for mol_idx, mol in enumerate(mols):
         forcefield = mol.properties["minimized against: "]
-        print(f"Conformer energies of mol {mol.name}, minimized against {forcefield}")
-        print(
-            "Conformer         Initial PE         Minimized PE       "
-            "RMS between initial and minimized conformer"
+        out += f"Conformer energies of mol {mol.name}, minimized against {forcefield}\n"
+        out += (
+            "Conformer         Initial PE         Minimized PE       \n"
+            "RMS between initial and minimized conformer\n"
         )
         for conformer_idx in range(mol.n_conformers):
             pre_energy = mol.properties[pre_key][conformer_idx]
             min_energy = mol.properties[min_key][conformer_idx]
             rmsd = mol.properties[rmsd_key][conformer_idx]
-            print(
-                "%5d / %5d : %8.3f kcal/mol %8.3f kcal/mol  %8.3f Angstroms"
-                % (
-                    conformer_idx + 1,
-                    mol.n_conformers,
-                    pre_energy / unit.kilocalories_per_mole,
-                    min_energy / unit.kilocalories_per_mole,
-                    rmsd,
-                )
+            out += "%5d / %5d : %8.3f kcal/mol %8.3f kcal/mol  %8.3f Angstroms\n" % (
+                conformer_idx + 1,
+                mol.n_conformers,
+                pre_energy / unit.kilocalories_per_mole,
+                min_energy / unit.kilocalories_per_mole,
+                rmsd,
             )
+
+    return out
 
 
 # TODO: Maybe use https://github.com/click-contrib/click-option-group
@@ -169,4 +168,4 @@ def get_conformer_energies_command(
         constrained=constrained,
     )
 
-    _print_mol_data(mols)
+    click.echo(_print_mol_data(mols))
