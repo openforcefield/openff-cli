@@ -1,7 +1,7 @@
-import argparse
 from copy import deepcopy
 from typing import List, Optional
 
+import click
 from openforcefield.topology.molecule import Molecule, UndefinedStereochemistryError
 from openforcefield.utils.toolkits import ToolkitRegistry
 from simtk import unit
@@ -228,67 +228,66 @@ def write_mols(
             )
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Generate conformers with cheminformatics toolkits"
-    )
-    parser._action_groups.pop()
-    required_args = parser.add_argument_group("required arguments")
-    optional_args = parser.add_argument_group("optional arguments")
+# TODO: Maybe use https://github.com/click-contrib/click-option-group
+@click.command("generate_conformers")
+@click.option(
+    "-t",
+    "--toolkit",
+    type=click.Choice(["openeye", "rdkit"]),
+    required=True,
+    help="Name of the underlying cheminformatics toolkit to use. Accepted values are openeye and rdkit",
+)
+@click.option(
+    "-f",
+    "--forcefield",
+    type=str,
+    required=True,
+    help="Name of the force field to use, i.e. openff-1.0.0",
+)
+@click.option(
+    "-m",
+    "--molecule",
+    type=str,
+    required=True,
+    help="Path to an input file containing a molecule(s)",
+)
+@click.option(
+    "-r",
+    "--rms-cutoff",
+    type=float,
+    default=0.25,
+    help="The redundancy cutoff between pre-minimized conformers",
+)
+@click.option(
+    "-p",
+    "--prefix",
+    type=str,
+    help="The prefix for filenames of output molecules",
+)
+@click.option(
+    "--constrained",
+    type=bool,
+    default=False,
+    help="Whether or not to use a constrained version of the force field",
+)
+def generate_conformers_command(
+    toolkit,
+    forcefield,
+    molecule,
+    rms_cutoff,
+    prefix,
+    constrained,
+):
+    """Generate conformers from a starting structure, and minimize them using an OpenFF force field."""
 
-    required_args.add_argument(
-        "-t",
-        "--toolkit",
-        type=str,
-        required=True,
-        help="Name of the underlying cheminformatics toolkit to use. Accepted"
-        " values are openeye and rdkit",
-    )
-    required_args.add_argument(
-        "-f",
-        "--forcefield",
-        type=str,
-        required=True,
-        help="Name of the force field to use, i.e. openff-1.0.0",
-    )
-    required_args.add_argument(
-        "-m",
-        "--molecule",
-        type=str,
-        required=True,
-        help="Path to an input file containing a molecule(s)",
-    )
-    optional_args.add_argument(
-        "-r",
-        "--rms-cutoff",
-        type=float,
-        default=0.25,
-        help="The redundancy cutoff between pre-minimized conformers",
-    )
-    optional_args.add_argument(
-        "-p",
-        "--prefix",
-        type=str,
-        help="The prefix for filenames of output molecules",
-    )
-    optional_args.add_argument(
-        "--constrained",
-        type=bool,
-        default=False,
-        help="Whether or not to use a constrained version of the force field",
-    )
-    args = parser.parse_args()
-
-    registry = make_registry(args.toolkit)
+    registry = make_registry(toolkit)
 
     mols = generate_conformers(
-        molecule=args.molecule,
+        molecule=molecule,
         registry=registry,
-        forcefield=args.forcefield,
-        constrained=args.constrained,
-        prefix=args.prefix,
+        forcefield=forcefield,
+        constrained=constrained,
+        prefix=prefix,
     )
 
-    write_mols(
-        mols, toolkit_registry=registry, molecule=args.molecule, prefix=args.prefix
-    )
+    write_mols(mols, toolkit_registry=registry, molecule=molecule, prefix=prefix)

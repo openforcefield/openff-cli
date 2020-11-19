@@ -1,6 +1,6 @@
-import argparse
 from typing import List
 
+import click
 from openforcefield.topology import Molecule
 from openforcefield.utils.toolkits import ToolkitRegistry
 from simtk import unit
@@ -124,51 +124,49 @@ def _print_mol_data(mols):
             )
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Evaluate conformer energies with OpenMM"
-    )
-    parser._action_groups.pop()
-    required_args = parser.add_argument_group("required arguments")
-    optional_args = parser.add_argument_group("optional arguments")
-
-    required_args.add_argument(
-        "-t",
-        "--toolkit",
-        type=str,
-        required=True,
-        help="Name of the underlying cheminformatics toolkit to use. Accepted"
-        " values are openeye and rdkit",
-    )
-    required_args.add_argument(
-        "-f",
-        "--forcefield",
-        type=str,
-        required=True,
-        help="Name of the force field to use, i.e. openff-1.0.0",
-    )
-    required_args.add_argument(
-        "-m",
-        "--molecule",
-        type=str,
-        required=True,
-        help="Path to an input file containing a molecule(s), single or multi-conformers",
-    )
-    optional_args.add_argument(
-        "--constrained",
-        type=bool,
-        default=False,
-        help="Whether or not to use a constrained version of the force field",
-    )
-    args = parser.parse_args()
-
-    registry = make_registry(args.toolkit)
+# TODO: Maybe use https://github.com/click-contrib/click-option-group
+@click.command("get_conformer_energies")
+@click.option(
+    "-t",
+    "--toolkit",
+    type=click.Choice(["openeye", "rdkit"]),
+    required=True,
+    help="Name of the underlying cheminformatics toolkit to use. Accepted values are openeye and rdkit",
+)
+@click.option(
+    "-f",
+    "--forcefield",
+    type=str,
+    required=True,
+    help="Name of the force field to use, i.e. openff-1.0.0",
+)
+@click.option(
+    "-m",
+    "--molecule",
+    type=str,
+    required=True,
+    help="Path to an input file containing a molecule(s)",
+)
+@click.option(
+    "--constrained",
+    type=bool,
+    default=False,
+    help="Whether or not to use a constrained version of the force field",
+)
+def get_conformer_energies_command(
+    toolkit,
+    forcefield,
+    molecule,
+    constrained,
+):
+    """Evaluate conformer energies with OpenMM"""
+    registry = make_registry(toolkit)
 
     mols = get_conformer_energies(
-        molecule=args.molecule,
+        molecule=molecule,
         registry=registry,
-        forcefield=args.forcefield,
-        constrained=args.constrained,
+        forcefield=forcefield,
+        constrained=constrained,
     )
 
     _print_mol_data(mols)

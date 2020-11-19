@@ -1,13 +1,9 @@
-import pathlib
 import subprocess
 import tempfile
 
 from openforcefield.utils import temporary_cd
 
-from openff.cli import __file__ as cli_path
-
 # TODO: Run tests from tempdirs
-CLI_ROOT = pathlib.Path(cli_path).joinpath("../../../").resolve()
 
 
 class TestCLICalls:
@@ -35,7 +31,7 @@ class TestCheckVersionsCalls(TestCLICalls):
 
         from openff.cli import __version__ as cli_version
 
-        out, _ = self.call(f"python {CLI_ROOT}/openff/cli/check_versions.py")
+        out, _ = self.call("openff check_versions")
         # TODO: Use regex to connect package names with versions
         assert toolkit_version in out
         assert cli_version in out
@@ -47,12 +43,8 @@ class TestGenerateConformersCalls(TestCLICalls):
         # TODO: This should maybe fail before checking the toolkit,
         #  based on missing required arguments
         _, err = self.call(
-            (
-                f"python {CLI_ROOT}/openff/cli/generate_conformers.py "
-                "--forcefield openff-1.0.0 --toolkit magic "
-                "--molecule molecule.sdf"
-            ),
+            "openff generate_conformers --forcefield openff-1.0.0 --toolkit magic --molecule molecule.sdf",
             raise_err=False,
         )
-        assert "openff.cli.utils.exceptions.UnsupportedToolkitError" in err
-        assert "magic" in err
+        assert "Error: Invalid value for '-t' / '--toolkit':" in err
+        assert "invalid choice: magic. (choose from openeye, rdkit)" in err
